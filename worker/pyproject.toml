@@ -1,0 +1,21 @@
+[project]
+name = "sentinela-worker"
+version = "0.1.0"
+description = "Worker de scans, orquestração e relatórios do Sentinela"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0,<0.116.0",
+    "uvicorn[standard]>=0.32.0,<0.33.0",
+    "pydantic>=2.9.0,<3.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0,<9.0.0",
+    "pytest-asyncio>=0.24.0,<0.25.0",
+    "httpx>=0.27.0,<0.28.0",
+]
+
+[tool.uv]
+package = false

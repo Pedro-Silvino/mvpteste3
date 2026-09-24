@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+dist/
+.env
+.env.local
+.env.*.local
+worker/.env
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+supabase/.branches/
+supabase/.temp/
+*.pdf
+!worker/templates/**/*.pdf
+.DS_Store

@@ -1,0 +1,233 @@
+{
+  "versao": "1.0.0",
+  "data": "2026-09-24",
+  "observacoes": [
+    "Fonte única da verdade para perguntas, pesos e mapeamentos. O seed do banco e o motor de nota leem este arquivo.",
+    "Mapeamento para seguradora usa apenas o NÚMERO e o tema das perguntas do questionário de referência (AIG CyberEdge). Não copiar o texto da seguradora para o produto.",
+    "Mapeamentos LGPD e Provimento 213 são indicativos e precisam de revisão jurídica antes de aparecerem em material de venda ([REVISAR])."
+  ],
+  "escala_respostas": {
+    "sim": 1.0,
+    "parcial": 0.5,
+    "nao": 0.0,
+    "nao_sei": null
+  },
+  "rotulos_opcoes": {
+    "sim": "Sim",
+    "parcial": "Mais ou menos",
+    "nao": "Não",
+    "nao_sei": "Não sei"
+  },
+  "status_por_valor": {
+    "1.0": "atende",
+    "0.5": "parcial",
+    "0.0": "nao_atende",
+    "null": "sem_dado"
+  },
+  "regra_nota": "nota = round(100 * soma(peso * valor) / soma(peso)); valor null conta como 0. Scan tem prioridade sobre resposta.",
+  "faixas": [
+    { "min": 0, "max": 39, "rotulo": "Exposta", "cor": "#C0392B" },
+    { "min": 40, "max": 69, "rotulo": "Em construção", "cor": "#D68910" },
+    { "min": 70, "max": 89, "rotulo": "Boa base", "cor": "#4290AE" },
+    { "min": 90, "max": 100, "rotulo": "Madura", "cor": "#1E8449" }
+  ],
+  "controles": [
+    {
+      "id": "C01",
+      "nome": "Responsável pela segurança",
+      "area": "Governança",
+      "peso": 1,
+      "por_que": "Sem dono, ninguém percebe quando algo para de funcionar.",
+      "pergunta": "Existe uma pessoa (da empresa ou de fora) responsável por cuidar da segurança dos computadores e dados?",
+      "ajuda": "Pode ser o dono, a TI, um prestador ou a própria DataDops. O importante é ter nome.",
+      "opcoes": ["sim", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Carta de designação assinada (modelo gerado pelo sistema).",
+      "ficha": ["Escolha a pessoa.", "Gere a carta de designação no portal.", "Assine e guarde."],
+      "mapa": { "seguradora_aig": ["14"], "lgpd": ["art. 41 (encarregado)", "art. 50 (governança)"], "prov213": "governança/responsável técnico [REVISAR]" }
+    },
+    {
+      "id": "C02",
+      "nome": "Política de segurança",
+      "area": "Governança",
+      "peso": 1,
+      "por_que": "É o documento que clientes, auditores e seguradoras pedem primeiro.",
+      "pergunta": "A empresa tem um documento escrito com as regras de uso de computadores, senhas e dados?",
+      "ajuda": "Se existe mas ninguém assinou ou está desatualizado há mais de 1 ano, responda 'Mais ou menos'.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Política aprovada pela diretoria (modelo gerado pelo sistema).",
+      "ficha": ["Gere a política no portal.", "Ajuste o que não se aplica.", "Aprove e divulgue para a equipe."],
+      "mapa": { "seguradora_aig": [], "lgpd": ["art. 46", "art. 50"], "prov213": "política de segurança [REVISAR]" }
+    },
+    {
+      "id": "C03",
+      "nome": "Verificação em duas etapas (MFA)",
+      "area": "Acessos",
+      "peso": 3,
+      "por_que": "É o controle que mais evita invasão de e-mail e acesso remoto.",
+      "pergunta": "Quando alguém entra no e-mail da empresa num celular ou computador novo, o sistema pede um código além da senha?",
+      "ajuda": "Código por aplicativo, SMS ou notificação no celular. Responda 'Mais ou menos' se só algumas pessoas usam.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "m365", "regra": "percentual de usuários ativos com MFA registrado: 100% = atende; >=80% = parcial; <80% = nao_atende" },
+        { "modulo": "m365", "regra": "todos os administradores com MFA; se algum admin sem MFA = nao_atende" }
+      ],
+      "evidencia": "Resumo do scan M365: X de Y usuários com MFA, data e hash.",
+      "ficha": ["Ative o MFA para os administradores primeiro.", "Depois para todos os usuários.", "Rode o agente de novo para registrar."],
+      "mapa": { "seguradora_aig": ["19"], "lgpd": ["art. 46"], "prov213": "controle de acesso [REVISAR]" }
+    },
+    {
+      "id": "C04",
+      "nome": "Antivírus em todas as máquinas",
+      "area": "Proteção",
+      "peso": 2,
+      "por_que": "Algumas apólices excluem sinistro quando não há antivírus adequado.",
+      "pergunta": "Todos os computadores da empresa têm antivírus ligado e atualizado?",
+      "ajuda": "O antivírus do próprio Windows (Defender) conta, se estiver ligado.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "windows", "regra": "por máquina: antivírus ativo e assinatura com menos de 7 dias. Todas = atende; >=80% = parcial; senão nao_atende" }
+      ],
+      "evidencia": "Resumo do coletor Windows: X de Y máquinas protegidas.",
+      "ficha": ["Ligue o Defender ou instale o antivírus escolhido.", "Confirme atualização automática.", "Rode o agente em cada máquina."],
+      "mapa": { "seguradora_aig": ["15"], "lgpd": ["art. 46"], "prov213": "proteção contra código malicioso [REVISAR]" }
+    },
+    {
+      "id": "C05",
+      "nome": "Atualizações em dia",
+      "area": "Proteção",
+      "peso": 2,
+      "por_que": "Sistema desatualizado é a porta mais comum de entrada do ransomware.",
+      "pergunta": "Alguém garante que os computadores e sistemas recebem atualizações de segurança todo mês?",
+      "ajuda": "Inclui notebooks. Windows sem suporte (ex.: Windows 7) conta como 'Não'.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "windows", "regra": "por máquina: sistema com suporte ativo e última atualização instalada há menos de 45 dias. Todas = atende; >=80% = parcial; senão nao_atende" }
+      ],
+      "evidencia": "Resumo do coletor Windows: versão e data da última atualização por máquina (sem nome de usuário).",
+      "ficha": ["Ative atualização automática.", "Troque sistemas sem suporte.", "Rode o agente para registrar."],
+      "mapa": { "seguradora_aig": ["17"], "lgpd": ["art. 46"], "prov213": "sistemas com suporte do fabricante [REVISAR]" }
+    },
+    {
+      "id": "C06",
+      "nome": "Backup com cópia separada",
+      "area": "Continuidade",
+      "peso": 3,
+      "por_que": "Sem cópia fora do alcance do ataque, o ransomware leva o backup junto.",
+      "pergunta": "Se o computador ou servidor principal parasse hoje, existe uma cópia dos arquivos guardada em outro lugar, que um vírus não alcançaria?",
+      "ajuda": "Exemplos: nuvem com versões, HD desconectado, backup em outro prédio. HD sempre plugado não conta.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Print da configuração do backup + data do último backup bem-sucedido.",
+      "ficha": ["Defina o que é crítico.", "Configure backup automático com uma cópia desconectada ou imutável.", "Suba a evidência no portal."],
+      "mapa": { "seguradora_aig": ["16", "21c"], "lgpd": ["art. 46"], "prov213": "backup e continuidade [REVISAR]" }
+    },
+    {
+      "id": "C07",
+      "nome": "Teste de restauração",
+      "area": "Continuidade",
+      "peso": 2,
+      "por_que": "No laboratório vemos toda semana backup que existia, mas não voltava.",
+      "pergunta": "Nos últimos 6 meses, alguém testou recuperar arquivos do backup para ver se funciona?",
+      "ajuda": "Testar = restaurar de verdade alguns arquivos e abrir.",
+      "opcoes": ["sim", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Registro do teste (data, o que foi restaurado, quem fez).",
+      "ficha": ["Escolha 3 arquivos importantes.", "Restaure do backup.", "Registre o teste no portal."],
+      "mapa": { "seguradora_aig": ["16", "21c"], "lgpd": ["art. 46"], "prov213": "testes de restauração [REVISAR]" }
+    },
+    {
+      "id": "C08",
+      "nome": "Inventário de equipamentos",
+      "area": "Ativos",
+      "peso": 1,
+      "por_que": "Não dá para proteger o que você não sabe que tem.",
+      "pergunta": "A empresa tem uma lista atualizada dos computadores, notebooks e servidores que usa?",
+      "ajuda": "Planilha serve. 'Mais ou menos' se existe mas está desatualizada.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "windows", "regra": "máquinas que rodaram o agente formam o inventário mínimo. Se nº de máquinas do agente >= nº declarado = atende; senão parcial" }
+      ],
+      "evidencia": "Inventário gerado pelo agente + planilha do cliente.",
+      "ficha": ["Rode o agente em todas as máquinas.", "Complete a planilha com o que não roda Windows.", "Revise a cada 3 meses."],
+      "mapa": { "seguradora_aig": ["21a"], "lgpd": ["art. 46"], "prov213": "inventário de ativos [REVISAR]" }
+    },
+    {
+      "id": "C09",
+      "nome": "Contas de administrador controladas",
+      "area": "Acessos",
+      "peso": 2,
+      "por_que": "Conta de administrador invadida entrega a empresa inteira.",
+      "pergunta": "Poucas pessoas têm acesso de administrador, e quem sai da empresa perde o acesso no mesmo dia?",
+      "ajuda": "Se todo mundo é administrador do próprio computador, responda 'Não'.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "m365", "regra": "administradores globais entre 2 e 4 = atende; 5 a 6 = parcial; mais que 6 ou só 1 = nao_atende" },
+        { "modulo": "windows", "regra": "máquinas onde o usuário do dia a dia é administrador local: 0 = atende; até 20% = parcial; senão nao_atende" }
+      ],
+      "evidencia": "Contagem de administradores (M365 e local), sem nomes.",
+      "ficha": ["Reduza os administradores globais para 2 a 4.", "Tire o admin local dos usuários comuns.", "Crie rotina de desligamento."],
+      "mapa": { "seguradora_aig": ["21b"], "lgpd": ["art. 46"], "prov213": "gestão de acessos privilegiados [REVISAR]" }
+    },
+    {
+      "id": "C10",
+      "nome": "Notebooks criptografados",
+      "area": "Proteção",
+      "peso": 1,
+      "por_que": "Notebook perdido sem criptografia é vazamento de dados.",
+      "pergunta": "Os notebooks da empresa têm o disco protegido (BitLocker ou similar), para que ninguém leia os arquivos se ele for roubado?",
+      "ajuda": "Se a empresa não tem notebook, responda 'Sim'.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [
+        { "modulo": "windows", "regra": "portáteis com BitLocker ligado no disco do sistema: todos = atende; >=80% = parcial; senão nao_atende; sem portáteis = atende" }
+      ],
+      "evidencia": "Resumo do coletor Windows: X de Y portáteis criptografados.",
+      "ficha": ["Ative o BitLocker.", "Guarde a chave de recuperação em local seguro.", "Rode o agente para registrar."],
+      "mapa": { "seguradora_aig": ["20a"], "lgpd": ["art. 46"], "prov213": "criptografia [REVISAR]" }
+    },
+    {
+      "id": "C11",
+      "nome": "Treinamento da equipe",
+      "area": "Pessoas",
+      "peso": 1,
+      "por_que": "A maior parte dos ataques começa num clique de funcionário.",
+      "pergunta": "Nos últimos 12 meses, a equipe recebeu alguma orientação sobre golpes, senhas e cuidados com dados?",
+      "ajuda": "Vale treinamento online ou presencial, desde que exista registro de quem participou.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Lista de presença + conteúdo + data.",
+      "ficha": ["Envie o treinamento gravado da DataDops.", "Colete a lista de presença.", "Repita na entrada de cada novo funcionário."],
+      "mapa": { "seguradora_aig": ["18"], "lgpd": ["art. 46", "art. 50"], "prov213": "capacitação [REVISAR]" }
+    },
+    {
+      "id": "C12",
+      "nome": "Plano de incidente",
+      "area": "Resposta",
+      "peso": 1,
+      "por_que": "Na crise, quem tem plano perde horas; quem não tem perde dias e a apólice.",
+      "pergunta": "Se a empresa sofresse um ataque hoje, está escrito o que fazer, quem avisar e em quanto tempo (inclusive seguradora e ANPD)?",
+      "ajuda": "Plano de 1 página já conta.",
+      "opcoes": ["sim", "parcial", "nao", "nao_sei"],
+      "fontes_automaticas": [],
+      "evidencia": "Plano aprovado (modelo gerado pelo sistema) com contatos e retentor ProHD.",
+      "ficha": ["Gere o plano no portal.", "Preencha os contatos.", "Aprove e deixe impresso com a diretoria."],
+      "mapa": { "seguradora_aig": ["21c"], "lgpd": ["art. 48 (comunicação de incidente)"], "prov213": "plano de resposta e continuidade [REVISAR]" }
+    }
+  ],
+  "cadastro_extra": [
+    { "id": "Q_INCIDENTE", "pergunta": "Nos últimos 5 anos, a empresa sofreu algum ataque, vazamento ou perda de dados?", "opcoes": ["sim", "nao", "nao_sei"], "uso": "Contexto do relatório. Não entra na nota. Relaciona-se às perguntas 10 a 12 da seguradora." },
+    { "id": "Q_TI", "pergunta": "Quem cuida da TI hoje?", "opcoes": ["equipe_interna", "prestador_externo", "ninguem", "nao_sei"], "uso": "Define se enviamos o convite do agente para a TI." },
+    { "id": "Q_EMAIL", "pergunta": "Qual e-mail a empresa usa?", "opcoes": ["microsoft_365", "google_workspace", "outro", "nao_sei"], "uso": "Define quais módulos do agente rodar." },
+    { "id": "Q_SEGURO", "pergunta": "A empresa tem ou pretende contratar seguro cibernético?", "opcoes": ["tem", "vai_contratar", "nao", "nao_sei"], "uso": "Lead para corretor parceiro e data de renovação." }
+  ],
+  "checagens_externas": [
+    { "id": "X01", "nome": "E-mail com SPF", "peso": 1, "regra": "registro TXT v=spf1 presente e terminando em -all ou ~all = ok; +all ou ausente = falha" },
+    { "id": "X02", "nome": "E-mail com DMARC", "peso": 2, "regra": "_dmarc com p=reject ou p=quarantine = ok; p=none = parcial; ausente = falha" },
+    { "id": "X03", "nome": "E-mail com DKIM", "peso": 1, "regra": "tentar seletores comuns (selector1, selector2, google, default, k1, s1). Encontrou = ok; não encontrou = sem_dado (não é falha)" },
+    { "id": "X04", "nome": "Certificado do site válido", "peso": 1, "regra": "TLS válido e expira em mais de 15 dias = ok; expira em até 15 dias = parcial; inválido/expirado = falha" },
+    { "id": "X05", "nome": "Site força HTTPS", "peso": 1, "regra": "http:// redireciona para https:// = ok; senão falha" },
+    { "id": "X06", "nome": "Cabeçalhos de segurança", "peso": 1, "regra": "HSTS presente = ok; ausente = parcial (informativo)" }
+  ],
+  "regra_nota_externa": "mesma fórmula da nota principal, só com checagens externas; sem_dado não entra no denominador. Exibida separada; não altera a nota Base 12."
+}
