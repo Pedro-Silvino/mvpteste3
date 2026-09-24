@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-09-24 17:15 — T01 Repositório e ferramentas
+- Feito: `git init` + primeiro commit; monorepo pnpm (`apps/web` Next.js 15.5.26 + TS + Tailwind); `worker/` com uv + FastAPI (Python 3.12.14); Dependabot (npm, uv, github-actions).
+- Arquivos: `pnpm-workspace.yaml`, `package.json` (raiz), `apps/web/*`, `worker/pyproject.toml`, `worker/app/main.py`, `worker/tests/test_health.py`, `.github/dependabot.yml`.
+- Decisões: create-next-app instalou Next 16 por padrão; travado em 15.5.26 conforme stack do CLAUDE.md §2. Removidos AGENTS.md/CLAUDE.md que o Next 16 gera automaticamente (não fazem parte da convenção do projeto).
+- Testes: `pnpm dev` sobe e `/` responde 200; `uv run pytest` no worker passa 1 teste (`/health`).
+- Próximo passo: T02 Supabase (criar projeto `sentinela-mvp`, mostrar SQL da migração, aplicar após "ok", rodar advisors).
+- Bloqueios: nenhum.
+
 ## 2026-09-24 16:40 — T00 Kit inicial (criado no chat do claude.ai)
 - Feito: CLAUDE.md, PRODUTO.md, BASE12.json, TAREFAS.md, DECISOES.md, comandos /inicio /fim /tarefa, migração inicial do Supabase.
 - Arquivos: `CLAUDE.md`, `docs/*`, `supabase/migrations/20260924000000_init.sql`, `supabase/tests/*`, `.claude/commands/*`, `.env.example`.

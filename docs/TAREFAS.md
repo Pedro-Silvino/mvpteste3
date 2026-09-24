@@ -8,7 +8,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 
 ## Semana 1 — Diagnóstico Express vendável
 
-- [ ] **T01 Repositório e ferramentas**
+- [x] **T01 Repositório e ferramentas**
   - Git, `.gitignore`, pnpm workspace, `apps/web` (Next.js 15 + TS + Tailwind), `worker/` (uv + FastAPI), Supabase CLI.
   - Aceite: `pnpm dev` abre a página inicial; `uv run pytest` passa com 1 teste vazio; Dependabot configurado.
 
