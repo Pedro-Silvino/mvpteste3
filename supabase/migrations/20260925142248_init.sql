@@ -549,3 +549,4 @@ create policy storage_evidence_insert on storage.objects for insert to authentic
                   and m.role in ('owner','ti')
                   and m.org_id::text = (storage.foldername(name))[1])
   );
+;
