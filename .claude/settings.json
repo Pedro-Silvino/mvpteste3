@@ -3,7 +3,176 @@
     "allow": [
       "WebSearch",
       "mcp__claude_ai_Supabase__get_advisors",
-      "mcp__claude_ai_Supabase__list_tables"
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__list_extensions",
+      "mcp__claude_ai_Supabase__list_edge_functions",
+      "mcp__claude_ai_Supabase__get_edge_function",
+      "mcp__claude_ai_Supabase__list_branches",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "mcp__claude_ai_Supabase__query_logs",
+      "mcp__claude_ai_Supabase__search_docs",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx prettier *)",
+      "Bash(npx playwright test *)",
+      "Bash(pnpm run *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm exec vitest *)",
+      "Bash(pnpm exec tsc *)",
+      "Bash(pnpm exec playwright test *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git stash *)",
+      "Bash(supabase start)",
+      "Bash(supabase stop)",
+      "Bash(supabase status)",
+      "Bash(supabase gen types *)",
+      "Bash(supabase migration new *)",
+      "Bash(supabase test db *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(pnpm -r run *)",
+      "Bash(pnpm -r test *)",
+      "Bash(pnpm build *)",
+      "Edit(/apps/**)",
+      "Edit(/worker/**)",
+      "Edit(/agent/**)",
+      "Edit(/packages/**)",
+      "Edit(/supabase/functions/**)",
+      "Edit(/docs/**)",
+      "Bash(uv run pytest *)",
+      "Bash(supabase migration list *)",
+      "Bash(supabase db diff *)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:nextjs.org)",
+      "WebFetch(domain:docs.asaas.com)",
+      "WebFetch(domain:docs.zapsign.com.br)",
+      "WebFetch(domain:www.gov.br)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm install *)",
+      "Bash(rm -rf *)",
+      "Bash(supabase db reset *)",
+      "Edit(/supabase/migrations/**)",
+      "Edit(/.github/**)",
+      "Edit(/package.json)",
+      "Edit(/middleware.ts)",
+      "Edit(/src/middleware.ts)",
+      "Edit(**/auth/**)",
+      "Edit(**/billing/**)",
+      "Edit(**/*.sql)",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__deploy_edge_function",
+      "Bash(supabase db pull *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.development)",
+      "Read(.env.development.local)",
+      "Read(.env.production)",
+      "Read(.env.production.local)",
+      "Read(.env.test.local)",
+      "Read(supabase/.env)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.supabase/**)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(supabase link *)",
+      "Bash(supabase db push *)",
+      "Bash(supabase secrets *)",
+      "Bash(supabase functions deploy *)",
+      "Bash(supabase projects *)",
+      "Bash(vercel *)",
+      "Bash(npm publish *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "mcp__claude_ai_Supabase__create_project",
+      "mcp__claude_ai_Supabase__pause_project",
+      "mcp__claude_ai_Supabase__restore_project",
+      "mcp__claude_ai_Supabase__create_branch",
+      "mcp__claude_ai_Supabase__delete_branch",
+      "mcp__claude_ai_Supabase__merge_branch",
+      "mcp__claude_ai_Supabase__rebase_branch",
+      "mcp__claude_ai_Supabase__reset_branch",
+      "mcp__claude_ai_Supabase__create_edge_function_secret"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/injetar-progresso.mjs\"" }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "denyRead": [
+        "./.env",
+        "./.env.local",
+        "./.env.development",
+        "./.env.development.local",
+        "./.env.production",
+        "./.env.production.local",
+        "./.env.test.local",
+        "./supabase/.env"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "registry.npmjs.org",
+        "*.npmjs.org",
+        "github.com",
+        "*.github.com",
+        "*.githubusercontent.com"
+      ]
+    },
+    "credentials": {
+      "files": [
+        { "path": "~/.ssh", "mode": "deny" },
+        { "path": "~/.aws", "mode": "deny" },
+        { "path": "~/.supabase", "mode": "deny" }
+      ],
+      "envVars": [
+        { "name": "SUPABASE_ACCESS_TOKEN", "mode": "deny" },
+        { "name": "SUPABASE_SERVICE_ROLE_KEY", "mode": "deny" },
+        { "name": "ASAAS_API_KEY", "mode": "deny" },
+        { "name": "ZAPSIGN_API_TOKEN", "mode": "deny" },
+        { "name": "GITHUB_TOKEN", "mode": "deny" },
+        { "name": "GH_TOKEN", "mode": "deny" }
+      ]
+    }
   }
 }

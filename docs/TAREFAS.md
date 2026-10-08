@@ -95,3 +95,9 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 - [ ] Preços dos planos.
 - [ ] Logo em SVG.
 - [ ] DNS de `app.datadops.com.br`.
+
+---
+
+## Dívidas (recomendações médias/baixas do auditor-seguranca)
+> Preenchido pela skill `/proxima-issue` quando o auditor aprova uma tarefa mas aponta melhorias não bloqueantes.
+- 

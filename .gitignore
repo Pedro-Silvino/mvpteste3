@@ -3,6 +3,7 @@ node_modules/
 out/
 dist/
 .env
+.env*
 .env.local
 .env.*.local
 worker/.env
@@ -15,3 +16,4 @@ supabase/.temp/
 *.pdf
 !worker/templates/**/*.pdf
 .DS_Store
+.claude/settings.local.json

@@ -74,12 +74,17 @@ Somos uma empresa de segurança. Uma falha aqui mata o negócio.
 4. **Minimizar dados pessoais.** Guardar contagens ("12 de 40 usuários sem MFA"), não listas de nomes/e-mails.
 5. Toda evidência recebida tem **SHA-256** gravado. Todo relatório gerado tem SHA-256 gravado.
 6. **Token do agente:** gerado uma vez, mostrado uma vez, guardado só o hash, com validade e revogação.
-7. Segredos só em variáveis de ambiente (`.env.local`, nunca commitado). Manter `.env.example` atualizado.
+7. Segredos só em variáveis de ambiente (`.env.local`, nunca commitado). Manter `.env.example` atualizado. **Nunca leia nem imprima o conteúdo de `.env`** no chat ou em log.
 8. Toda ação sensível grava em `audit_log`.
 9. Validação de entrada com Zod (web) e Pydantic (worker). Nada de SQL concatenado.
 10. Scan externo do diagnóstico gratuito = **somente consultas públicas** (DNS, certificado, cabeçalhos HTTP da página inicial). **Varredura de portas só com autorização assinada** (`authorizations.tipo = 'scan_ativo'`).
 11. Dependências com versão fixa. Dependabot ligado.
 12. Buckets do Storage **privados**; acesso por URL assinada de curta duração.
+13. Nunca use dado real de cliente em teste, fixture ou log (nem credencial, nem nome, nem e-mail).
+14. Nunca desative ou enfraqueça teste, lint, RLS ou checagem de segurança para fazer o build passar.
+15. Nunca faça `push --force` nem `reset --hard` (já bloqueados em `.claude/settings.json`); deploy e merge na `main` só quando o Pedro pedir explicitamente.
+16. Rate limit em rotas públicas (ex.: login, diagnóstico gratuito).
+17. Erro genérico para o cliente; stack trace e dado pessoal só em log interno.
 
 ---
 
@@ -113,9 +118,11 @@ O portal e os relatórios são lidos por clientes, corretores e seguradoras.
 
 - **Uma tarefa por vez**, na ordem de `docs/TAREFAS.md`. Não pule nem adiante tarefa de outra semana.
 - Antes de codar: diga em até 5 tópicos o plano. Depois execute.
-- Toda função de regra (nota, mapeamento de scan → controle) tem **teste** (Vitest no web, pytest no worker).
+- **TDD:** escreva o teste primeiro, veja falhar, implemente o mínimo para passar, depois refatore com o teste verde. Toda função de regra (nota, mapeamento de scan → controle) tem **teste** (Vitest no web, pytest no worker). Antes de dizer que terminou, rode os testes (e lint/typecheck onde existir) e mostre a saída.
 - Não crie abstração "para o futuro". Código simples, legível, em inglês; textos de interface em português.
 - Se algo exigir decisão do Pedro (preço, texto jurídico, fornecedor pago), **pare e pergunte** em uma linha.
+- **Sempre pergunte antes de:** `git push`, abrir ou mergear PR; instalar dependência nova (diga o pacote e o motivo); criar ou alterar migração, política RLS (ver §3), autenticação ou cobrança; alterar CI (`.github/`), `package.json` ou middleware. As permissões técnicas desses pontos de parada estão em `.claude/settings.json` (`ask`/`deny`); esta lista é a versão em prosa, para não depender só da ferramenta.
+- **Branch por tarefa só no ciclo automatizado** (skill `/proxima-issue` com os subagentes `implementador`, `validador` e `auditor-seguranca`): cada tarefa numa branch `feat/<n>-<slug>`, commits semânticos (`feat:`, `fix:`, `test:`, `refactor:`, `security:`); só o Pedro marca `[x]` em `docs/TAREFAS.md`, depois do merge. No fluxo manual (`/tarefa`, você e o Pedro na mesma conversa) continua valendo o §0: commit direto, mensagem curta em português, você mesmo marca `[x]` ao terminar.
 - Ao terminar, explique o resultado em até 5 tópicos e diga como testar.
 
 ---
