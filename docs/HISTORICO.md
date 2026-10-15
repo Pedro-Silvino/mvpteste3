@@ -26,7 +26,7 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ## 2026-09-24 16:40 — T00 Kit inicial (criado no chat do claude.ai)
 - Feito: CLAUDE.md, PRODUTO.md, BASE12.json, TAREFAS.md, DECISOES.md, comandos /inicio /fim /tarefa, migração inicial do Supabase.
-- Arquivos: `CLAUDE.md`, `docs/*`, `supabase/migrations/20260924000000_init.sql`, `supabase/tests/*`, `.claude/commands/*`, `.env.example`.
+- Arquivos: `CLAUDE.md`, `docs/*`, `supabase/migrations/20260924000000_init.sql` (hoje `20260925142248_init.sql`, alinhada ao histórico do remoto), `supabase/tests/*`, `.claude/commands/*`, `.env.example`.
 - Decisões: D01 a D10 (ver DECISOES.md).
 - Testes: migração aplicada num Postgres 16 local com stubs de auth/storage; 16 testes de RLS passaram (usuário B não vê dados de A; anônimo bloqueado; cliente não altera plano nem nota; hash do token invisível; cliente não sobe relatório falso).
 - Próximo passo: T01 Repositório e ferramentas.

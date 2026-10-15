@@ -57,9 +57,10 @@ Gerenciador de pacotes: `pnpm` (web) e `uv` (worker).
 ## 3. Supabase
 
 - Projeto **novo**, nome `sentinela-mvp`, região `sa-east-1`. **Não mexa** nos projetos antigos (Dops, Sentinela-dops, sentinelaclaude): estão pausados e ficam assim.
+- O **único** projeto Supabase remoto permitido é o `sentinela-mvp` (ref `gcysfzzpiwospnmwkcar`). Os demais projetos da conta nunca devem ser usados (nem leitura, nem MCP, nem CLI). Confira o ref antes de qualquer chamada.
 - Toda mudança de banco é uma **migração** em `supabase/migrations/` (Supabase CLI). Nunca altere o banco remoto "na mão".
 - Antes de aplicar no remoto: mostre o SQL ao Pedro e espere o "ok".
-- A migração inicial já existe: `supabase/migrations/20260924000000_init.sql`. Revise, aplique e rode `get_advisors` (segurança) depois.
+- Histórico local alinhado com o remoto: `20260925142248_init.sql` e `20260928142523_fix_security_definer_execute_grants.sql`, já aplicadas. Nova mudança: `supabase migration new <nome>`, mostrar o SQL ao Pedro e só aplicar após o "ok"; depois rodar `get_advisors` (segurança).
 - Gere os tipos TS após cada migração: `supabase gen types typescript --linked > apps/web/lib/database.types.ts`.
 
 ---
