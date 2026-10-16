@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-16 10:40 — T02 Supabase
+- Feito: `sentinela-mvp` (gcysfzzpiwospnmwkcar) com 2 migrações aplicadas e alinhadas; 17 tabelas com RLS; advisors sem ERROR (9 WARN intencionais, D12). Base do web consertada: ESLint via FlatCompat, scripts `typecheck`/`test` (vitest 4.1.11).
+- Arquivos: `supabase/tests/run_local.sh` (novo), `apps/web/eslint.config.mjs`, `apps/web/package.json`, `.claude/agents/validador.md`, `CLAUDE.md`, `docs/DECISOES.md`.
+- Decisões: D12. Teste de RLS roda no PostgreSQL 17 local, sem Docker: `bash supabase/tests/run_local.sh`.
+- Testes: RLS 16/16 ok (todas as linhas "deve FALHAR" barradas; `update assessments set score` dá UPDATE 0). `pnpm lint`/`typecheck`/`build` ok; `pnpm test` falha com "No test files found" até a T03 (esperado). Worker: 1 passed.
+- Próximo passo: T03 Login e cadastro (inclui virar staff após o 1º login do Pedro).
+- Bloqueios: nenhum. Pendente do Pedro: remover a frase do Supabase em `autoMode.environment` (~/.claude/settings.json).
+
 ## 2026-09-24 17:15 — T01 Repositório e ferramentas
 - Feito: `git init` + primeiro commit; monorepo pnpm (`apps/web` Next.js 15.5.26 + TS + Tailwind); `worker/` com uv + FastAPI (Python 3.12.14); Dependabot (npm, uv, github-actions).
 - Arquivos: `pnpm-workspace.yaml`, `package.json` (raiz), `apps/web/*`, `worker/pyproject.toml`, `worker/app/main.py`, `worker/tests/test_health.py`, `.github/dependabot.yml`.

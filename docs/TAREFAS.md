@@ -12,16 +12,17 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - Git, `.gitignore`, pnpm workspace, `apps/web` (Next.js 15 + TS + Tailwind), `worker/` (uv + FastAPI), Supabase CLI.
   - Aceite: `pnpm dev` abre a página inicial; `uv run pytest` passa com 1 teste vazio; Dependabot configurado.
 
-- [ ] **T02 Supabase**
+- [x] **T02 Supabase**
   - Criar projeto `sentinela-mvp` (sa-east-1). Linkar CLI. Mostrar a migração inicial ao Pedro, aplicar após o "ok".
   - Rodar advisors de segurança e corrigir o que aparecer.
-  - Pedro vira staff: `update profiles set is_staff = true where id = '<id do Pedro>';` (depois do primeiro login).
+  - Pedro vira staff → movido para a T03 (depende do primeiro login).
   - Aceite: 17 tabelas com RLS ligado; advisors sem erro crítico; `supabase/tests/01_rls_test.sql` passa num Postgres local (instruções no arquivo).
 
 - [ ] **T03 Login e cadastro da empresa**
   - `/entrar`: e-mail + código de 6 dígitos (Supabase Auth OTP).
   - `/comecar`: formulário (nome, CNPJ, domínio, setor, faixa de funcionários) + checkbox de termos + captura de `?p=CODIGO` (cookie de 30 dias). Chama `create_organization`.
   - Validação com Zod. Máscara de CNPJ.
+  - Depois do primeiro login do Pedro: `update profiles set is_staff = true where id = '<id do Pedro>';` (SQL aprovado pelo Pedro).
   - Aceite: empresa criada, parceiro gravado, 3 aceites gravados, job `scan_externo` criado. Usuário B não vê a empresa de A.
 
 - [ ] **T04 Questionário Base 12**
