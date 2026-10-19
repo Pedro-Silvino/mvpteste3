@@ -18,7 +18,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - Pedro vira staff → movido para a T03 (depende do primeiro login).
   - Aceite: 17 tabelas com RLS ligado; advisors sem erro crítico; `supabase/tests/01_rls_test.sql` passa num Postgres local (instruções no arquivo).
 
-- [ ] **T03 Login e cadastro da empresa**
+- [~] **T03 Login e cadastro da empresa** — código e testes prontos; falta teste ponta a ponta (Pedro: `.env.local` + template de e-mail OTP no Supabase)
   - `/entrar`: e-mail + código de 6 dígitos (Supabase Auth OTP).
   - `/comecar`: formulário (nome, CNPJ, domínio, setor, faixa de funcionários) + checkbox de termos + captura de `?p=CODIGO` (cookie de 30 dias). Chama `create_organization`.
   - Validação com Zod. Máscara de CNPJ.

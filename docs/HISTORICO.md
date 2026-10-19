@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-19 14:00 — T03 Login e cadastro da empresa (em andamento)
+- Feito: `/entrar` (e-mail + código OTP de 6 dígitos), `/comecar` (Zod, máscara e dígito de CNPJ, setor, faixa, aceite único cobrindo termos + privacidade + scan externo) via server action → `create_organization`; middleware (sessão, rotas protegidas, cookie `?p=` 30 dias httpOnly); layout com Archivo/Hanken e cores da marca; home; placeholders `/diagnostico`, `/termos`, `/privacidade`.
+- Arquivos: `apps/web/middleware.ts`, `apps/web/lib/{cnpj,partner,safe-redirect,request}.ts`, `apps/web/lib/validation/organization.ts`, `apps/web/lib/supabase/*`, `apps/web/app/{entrar,comecar,diagnostico,termos,privacidade}/*`.
+- Decisões: D13 (rate limit), D14 (CNPJ numérico), D15 (IP do aceite). Deps: @supabase/supabase-js 2.118.0, @supabase/ssr 0.12.7, zod 4.6.7.
+- Testes: Vitest 19/19 (CNPJ, parceiro, open redirect, schema, IP, mensagens de erro); lint/typecheck/build ok a partir de `.next` limpo; smoke local: `/comecar` e `/diagnostico` → 307 `/entrar?next=`, cookie `snt_partner` gravado e `?p=<script>` ignorado. Regras de banco do aceite (parceiro, 3 aceites, job, B não vê A) cobertas pelo teste de RLS T1–T3/T8.
+- Próximo passo: Pedro cria `apps/web/.env.local` e ajusta o template de e-mail OTP; testar ponta a ponta; virar staff. Em paralelo: T04.
+- Bloqueios: `.env.local` (só Pedro tem as chaves); template "Magic Link" do Supabase precisa conter `{{ .Token }}` para enviar o código.
+
 ## 2026-10-16 10:40 — T02 Supabase
 - Feito: `sentinela-mvp` (gcysfzzpiwospnmwkcar) com 2 migrações aplicadas e alinhadas; 17 tabelas com RLS; advisors sem ERROR (9 WARN intencionais, D12). Base do web consertada: ESLint via FlatCompat, scripts `typecheck`/`test` (vitest 4.1.11).
 - Arquivos: `supabase/tests/run_local.sh` (novo), `apps/web/eslint.config.mjs`, `apps/web/package.json`, `.claude/agents/validador.md`, `CLAUDE.md`, `docs/DECISOES.md`.
