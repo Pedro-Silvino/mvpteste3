@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { firstUnansweredIndex, type Step } from "@/lib/questionnaire";
 import { saveAnswer, submitAssessment } from "./actions";
 
@@ -16,80 +16,124 @@ export function Questionnaire({
   const [answers, setAnswers] = useState(initialAnswers);
   const [index, setIndex] = useState(() => Math.min(firstUnansweredIndex(steps, initialAnswers), steps.length - 1));
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [sending, setSending] = useState(false);
+  // Saves run one after another in the background, so the next question opens instantly
+  // and the final submit only goes after every answer is stored.
+  const queue = useRef<Promise<boolean>>(Promise.resolve(true));
 
   const step = steps[index];
   const isLast = index === steps.length - 1;
-  const progress = Math.round(((index + 1) / steps.length) * 100);
+  const done = Object.keys(answers).filter((id) => steps.some((s) => s.id === id)).length;
+  const progress = Math.round((done / steps.length) * 100);
 
   function choose(value: string) {
+    if (sending) return;
     setError(null);
-    const previous = answers;
-    setAnswers({ ...answers, [step.id]: value });
-    startTransition(async () => {
-      const saved = await saveAnswer({ assessmentId, questionId: step.id, value });
+    setAnswers((a) => ({ ...a, [step.id]: value }));
+    const questionId = step.id;
+    queue.current = queue.current.then(async () => {
+      const saved = await saveAnswer({ assessmentId, questionId, value });
       if (!saved.ok) {
-        setAnswers(previous);
-        setError("Não conseguimos salvar essa resposta. Tente de novo.");
-        return;
+        setError("Não conseguimos salvar uma resposta. Confira a conexão e responda de novo.");
+        setAnswers((a) => {
+          const rest = { ...a };
+          delete rest[questionId];
+          return rest;
+        });
       }
-      if (!isLast) {
-        setIndex(index + 1);
+      return saved.ok;
+    });
+
+    if (!isLast) {
+      setIndex(index + 1);
+      return;
+    }
+    setSending(true);
+    void queue.current.then(async (ok) => {
+      if (!ok) {
+        setSending(false);
         return;
       }
       const sent = await submitAssessment(assessmentId);
-      if (sent && !sent.ok) setError("Não conseguimos enviar o diagnóstico. Tente de novo.");
+      if (sent && !sent.ok) {
+        setError("Não conseguimos enviar o diagnóstico. Tente de novo.");
+        setSending(false);
+      }
     });
   }
 
   return (
-    <div className="w-full max-w-xl rounded-2xl border border-line bg-white p-6 shadow-sm sm:p-8">
-      <div className="flex items-center justify-between text-sm text-muted">
-        <span>Pergunta {index + 1} de {steps.length}</span>
-        <span>{step.title}</span>
+    <div className="w-full max-w-xl">
+      <div className="mb-4 flex items-center justify-between text-sm font-medium text-n3">
+        <span>
+          {index + 1} <span className="text-muted">de {steps.length}</span>
+        </span>
+        <span className="rounded-full bg-white px-3 py-1 text-xs text-n3 shadow-sm">{step.title}</span>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-ice" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full bg-teal transition-all" style={{ width: `${progress}%` }} />
-      </div>
-
-      <h1 className="mt-6 text-xl font-bold text-n1">{step.question}</h1>
-      {step.help && <p className="mt-2 text-sm text-muted">{step.help}</p>}
-
-      <div className="mt-6 grid gap-3" role="radiogroup" aria-label={step.question}>
-        {step.options.map((o) => {
-          const selected = answers[step.id] === o.value;
-          return (
-            <button
-              key={o.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={pending}
-              onClick={() => choose(o.value)}
-              className={`rounded-lg border px-4 py-3 text-left font-medium disabled:opacity-60 ${
-                selected ? "border-teal bg-ice text-n1" : "border-line text-ink hover:border-teal"
-              }`}
-            >
-              {o.label}
-            </button>
-          );
-        })}
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-white"
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="h-full rounded-full bg-teal transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
-      {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
+      <div key={step.id} className="mt-6 rounded-3xl bg-white p-6 shadow-lg shadow-n3/10 sm:p-9">
+        <h1 className="text-2xl font-bold leading-snug text-n1">{step.question}</h1>
+        {step.help && <p className="mt-3 text-sm leading-relaxed text-muted">{step.help}</p>}
 
-      <div className="mt-6 flex items-center justify-between">
+        <div className="mt-7 grid gap-3" role="radiogroup" aria-label={step.question}>
+          {step.options.map((o) => {
+            const selected = answers[step.id] === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={sending}
+                onClick={() => choose(o.value)}
+                className={`group flex items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left text-base font-semibold transition disabled:opacity-60 ${
+                  selected
+                    ? "border-teal bg-ice text-n1"
+                    : "border-line text-n1 hover:border-teal hover:bg-ice/60 active:scale-[0.99]"
+                } ${o.value === "nao_sei" ? "text-muted" : ""}`}
+              >
+                <span
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${
+                    selected ? "border-teal bg-teal" : "border-line group-hover:border-teal"
+                  }`}
+                >
+                  {selected && <span className="h-2 w-2 rounded-full bg-white" />}
+                </span>
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && (
+          <p role="alert" className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        {sending && <p className="mt-5 text-sm text-muted">Enviando suas respostas…</p>}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between px-1 text-sm">
         <button
           type="button"
-          disabled={index === 0 || pending}
+          disabled={index === 0 || sending}
           onClick={() => setIndex(index - 1)}
-          className="text-sm text-teal underline disabled:opacity-40"
+          className="font-medium text-n3 hover:text-teal disabled:invisible"
         >
-          Voltar
+          ← Voltar
         </button>
         {answers[step.id] && !isLast && (
-          <button type="button" onClick={() => setIndex(index + 1)} className="text-sm text-teal underline">
-            Próxima
+          <button type="button" onClick={() => setIndex(index + 1)} className="font-medium text-n3 hover:text-teal">
+            Pular para a próxima →
           </button>
         )}
       </div>
