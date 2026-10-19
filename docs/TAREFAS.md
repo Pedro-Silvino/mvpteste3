@@ -37,11 +37,11 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - Grava `scan_results` (module `externo`, summary, sha256 do JSON canônico) e `assessments.external_score`.
   - Aceite: testes com domínios reais conhecidos (ex.: um com DMARC reject e um sem DMARC); nenhuma varredura de porta.
 
-- [ ] **T06 Motor de nota**
+- [x] **T06 Motor de nota**
   - `app/engine/scoring.py` e `mapping.py`: respostas + scans → `control_results` (scan manda mais; divergência marcada) → `score`.
   - Aceite: pytest cobre: tudo sim = 100; tudo não = 0; "não sei" = 0 e `sem_dado`; divergência detectada; pesos do JSON.
 
-- [ ] **T07 Relatório Express em PDF**
+- [~] **T07 Relatório Express em PDF** — código e testes prontos; falta Pedro rodar o worker, aprovar o visual e ver o PDF baixar; botão "Quero contratar" pendente (precisa RPC/migração com o ok do Pedro)
   - `worker/templates/relatorio_express.html` com a identidade DataDops (CLAUDE.md §6). Playwright → PDF.
   - Salva em `reports/{org_id}/{assessment_id}/express.pdf`, grava sha256 em `reports`.
   - `/resultado`: nota, faixa, 3 maiores lacunas, botão baixar (URL assinada 5 min), botão "Quero contratar" (cria alerta para staff).

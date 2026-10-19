@@ -1,10 +1,13 @@
 """Loop de jobs: pega um job pendente, executa e grava o resultado."""
 
+import hashlib
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Protocol
 
+from app.engine.scoring import compute_control_results, score
+from app.report import build_context, render_html, render_pdf
 from app.scans.external import (
     build_summary,
     canonical_sha256,
@@ -23,6 +26,12 @@ class Db(Protocol):
     def save_scan_result(self, **kw) -> None: ...
     def set_external_score(self, assessment_id: str, score: int | None) -> None: ...
     def finish_job(self, job_id: str, status: str, error: str | None = None) -> None: ...
+    def answers(self, assessment_id: str) -> dict[str, str]: ...
+    def latest_external_summary(self, org_id: str) -> dict | None: ...
+    def save_control_results(self, assessment_id: str, rows: list[dict]) -> None: ...
+    def complete_assessment(self, assessment_id: str, score: int) -> None: ...
+    def upload_report(self, path: str, pdf: bytes) -> None: ...
+    def save_report_row(self, **kw) -> None: ...
 
 
 def _scan_externo(db: Db, job: dict) -> None:
@@ -44,6 +53,21 @@ def _scan_externo(db: Db, job: dict) -> None:
         db.set_external_score(job["assessment_id"], summary["score"])
 
 
+def _processar(db: Db, job: dict) -> None:
+    org_id, asmt = job["org_id"], job["assessment_id"]
+    results = compute_control_results(db.answers(asmt))
+    external = db.latest_external_summary(org_id)
+    domain = db.org_domain(org_id) or ""
+    html = render_html(build_context(domain, results, external, date.today()))
+    pdf = render_pdf(html)  # gera o PDF antes de gravar qualquer coisa: falhou aqui, nada fica pela metade
+    path = f"{org_id}/{asmt}/express.pdf"
+    db.upload_report(path, pdf)
+    db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
+                       sha256=hashlib.sha256(pdf).hexdigest())
+    db.save_control_results(asmt, results)
+    db.complete_assessment(asmt, score(results))
+
+
 def process_one(db: Db) -> bool:
     """Processa um job. Devolve False se não havia nenhum pendente."""
     job = db.claim_job()
@@ -52,7 +76,9 @@ def process_one(db: Db) -> bool:
     try:
         if job["kind"] == "scan_externo":
             _scan_externo(db, job)
-        else:  # processar / relatorio / mensal chegam nas tarefas T06+; devolve para a fila sem gastar tentativa
+        elif job["kind"] == "processar":
+            _processar(db, job)
+        else:  # relatorio / mensal chegam nas tarefas T20+; devolve para a fila
             db.finish_job(job["id"], "pendente", "unsupported_kind")
             return True
         db.finish_job(job["id"], "ok")

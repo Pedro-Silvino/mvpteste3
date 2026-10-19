@@ -70,3 +70,63 @@ def test_failure_retries_until_max_attempts(monkeypatch):
     process_one(db)
     assert db.finished[0][1] == "erro"
     assert "x" not in (db.finished[0][2] or "")  # internal detail does not leak into the job row
+
+
+class ProcDb(FakeDb):
+    def __init__(self, job, answers=None, external=None):
+        super().__init__(job)
+        self._answers = answers if answers is not None else {f"C{i:02d}": "sim" for i in range(1, 13)}
+        self._external = external
+        self.control_rows = None
+        self.completed = None
+        self.uploads = []
+        self.report_rows = []
+
+    def answers(self, assessment_id):
+        return self._answers
+
+    def latest_external_summary(self, org_id):
+        return self._external
+
+    def save_control_results(self, assessment_id, rows):
+        self.control_rows = rows
+
+    def complete_assessment(self, assessment_id, score):
+        self.completed = (assessment_id, score)
+
+    def upload_report(self, path, pdf):
+        self.uploads.append((path, pdf))
+
+    def save_report_row(self, **kw):
+        self.report_rows.append(kw)
+
+
+PROC = {"id": "j2", "org_id": "o1", "assessment_id": "a1", "kind": "processar", "attempts": 1}
+
+
+def test_processar_scores_generates_pdf_and_registers_hash(monkeypatch):
+    monkeypatch.setattr("app.runner.render_pdf", lambda html: b"%PDF-fake")
+    db = ProcDb(PROC, external={"domain": "exemplo.com.br", "score": 80, "checks": {"X01": "ok"}})
+    assert process_one(db) is True
+    assert db.completed == ("a1", 100)
+    assert len(db.control_rows) == 12
+    path, pdf = db.uploads[0]
+    assert path == "o1/a1/express.pdf" and pdf == b"%PDF-fake"
+    import hashlib
+
+    assert db.report_rows == [
+        {"org_id": "o1", "assessment_id": "a1", "kind": "express", "storage_path": "o1/a1/express.pdf",
+         "sha256": hashlib.sha256(b"%PDF-fake").hexdigest()}
+    ]
+    assert db.finished == [("j2", "ok", None)]
+
+
+def test_processar_failure_does_not_mark_assessment_complete(monkeypatch):
+    def boom(html):
+        raise RuntimeError("chromium missing")
+
+    monkeypatch.setattr("app.runner.render_pdf", boom)
+    db = ProcDb({**PROC, "attempts": 1})
+    process_one(db)
+    assert db.report_rows == []
+    assert db.finished[0][1] == "pendente"

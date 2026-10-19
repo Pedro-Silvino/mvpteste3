@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Diagnóstico Express — {{ empresa }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --n1:#051623; --n3:#12324A; --teal:#4290AE; --sky:#89D1E2; --ice:#D8EEF5; --ink:#051623; --muted:#52606F; --line:#E1E8ED; }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Hanken Grotesk", "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 11pt; line-height: 1.45; }
+  h1, h2, h3, .display { font-family: "Archivo", "Segoe UI", Arial, sans-serif; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .hero { background: var(--n1); color: #fff; padding: 16mm 16mm 14mm; }
+  .brand { font-family: "Archivo", sans-serif; font-weight: 800; letter-spacing: .08em; font-size: 10pt; color: var(--sky); text-transform: uppercase; }
+  .hero h1 { font-size: 26pt; line-height: 1.1; margin-top: 10mm; }
+  .hero .sub { color: var(--sky); margin-top: 3mm; font-size: 11pt; }
+  .meta { display: flex; gap: 10mm; margin-top: 8mm; font-size: 9.5pt; color: var(--ice); }
+  .meta b { display: block; color: #fff; font-weight: 600; font-size: 11pt; }
+  .body { padding: 11mm 16mm 0; }
+  .score-row { display: flex; gap: 9mm; align-items: center; }
+  .dial { width: 46mm; height: 46mm; border-radius: 50%; border: 3.2mm solid {{ faixa.cor }}; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
+  .dial .n { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 34pt; line-height: 1; color: var(--n1); }
+  .dial .of { font-size: 9pt; color: var(--muted); }
+  .band { display: inline-block; background: {{ faixa.cor }}; color: #fff; font-family: "Archivo", sans-serif; font-weight: 700; padding: 1.2mm 4mm; border-radius: 99px; font-size: 11pt; }
+  .seal { display: inline-block; margin-left: 2mm; border: .4mm solid var(--teal); color: var(--teal); padding: .8mm 3mm; border-radius: 99px; font-size: 9pt; font-weight: 600; }
+  .score-row p { margin-top: 3mm; color: var(--muted); font-size: 10.5pt; }
+  h2 { font-size: 14pt; color: var(--n3); margin: 9mm 0 3mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  td, th { text-align: left; padding: 2mm 2.5mm; border-bottom: .3mm solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .04em; }
+  .chip { display: inline-block; padding: .4mm 2.4mm; border-radius: 99px; font-size: 8.5pt; font-weight: 600; white-space: nowrap; }
+  .s-atende, .s-ok { background: #DDF1E4; color: #1E8449; }
+  .s-parcial { background: #FBEBCF; color: #9A6407; }
+  .s-nao_atende, .s-falha { background: #F8DAD6; color: #C0392B; }
+  .s-sem_dado { background: var(--line); color: var(--muted); }
+  .note { margin-top: 4mm; font-size: 9pt; color: var(--muted); }
+  .p2 { padding: 12mm 16mm 0; }
+  .p2 h2:first-child { margin-top: 0; }
+  .p2 h2 { margin: 6mm 0 2mm; }
+  .p2 td, .p2 th { padding-top: 1.2mm; padding-bottom: 1.2mm; }
+  .p2 .gap { margin-bottom: 3mm; }
+  .gap { border: .3mm solid var(--line); border-left: 1.6mm solid var(--teal); border-radius: 2mm; padding: 3.5mm 5mm; margin-bottom: 4mm; }
+  .gap h3 { font-size: 12pt; color: var(--n1); display: flex; justify-content: space-between; gap: 4mm; }
+  .gap .why { color: var(--muted); font-size: 10pt; margin-top: 1mm; }
+  .gap ol { margin: 2mm 0 0 5mm; font-size: 10pt; }
+  .empty { background: var(--ice); border-radius: 2mm; padding: 5mm; }
+  footer { position: absolute; left: 16mm; right: 16mm; bottom: 10mm; border-top: .3mm solid var(--line); padding-top: 3mm; font-size: 8pt; color: var(--muted); }
+  footer b { color: var(--n3); }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="hero">
+    <div class="brand">DataDops · Sentinela</div>
+    <h1>Diagnóstico Express<br>de segurança digital</h1>
+    <div class="sub">Retrato dos 12 controles mínimos da sua empresa</div>
+    <div class="meta">
+      <div><span>Empresa</span><b>{{ empresa }}</b></div>
+      <div><span>Evidência registrada em</span><b>{{ data }}</b></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="score-row">
+      <div class="dial"><span class="n">{{ nota }}</span><span class="of">de 100</span></div>
+      <div>
+        <span class="band">{{ faixa.rotulo }}</span><span class="seal">Autoavaliado</span>
+        <p>Esta é a sua <b>nota de maturidade</b>: resume quantos dos 12 controles mínimos de segurança a empresa declarou ter. Controles mais importantes valem mais. "Não sei" conta como ponto a descobrir.</p>
+      </div>
+    </div>
+
+    <h2>Checagem pública do e-mail e do site</h2>
+    {% if externo %}
+    <table>
+      <tr><th>Checagem</th><th>Resultado</th></tr>
+      {% for c in externo.checks %}
+      <tr><td>{{ c.nome }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td></tr>
+      {% endfor %}
+    </table>
+    <p class="note">Feita só com consultas públicas (DNS, certificado e cabeçalhos da página inicial) em {{ externo.domain }}.{% if externo.score is not none %} Nota externa: {{ externo.score }}/100 (não altera a nota principal).{% endif %}</p>
+    {% else %}
+    <p class="note">A checagem pública do domínio não estava disponível na data da coleta.</p>
+    {% endif %}
+  </div>
+
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>
+</section>
+
+<section class="page">
+  <div class="p2">
+    <h2>Suas maiores lacunas</h2>
+    {% for g in lacunas %}
+    <div class="gap">
+      <h3><span>{{ g.nome }}</span><span class="chip s-{{ g.status }}">{{ g.rotulo }}</span></h3>
+      <div class="why">{{ g.por_que }}</div>
+      <ol>{% for passo in g.ficha %}<li>{{ passo }}</li>{% endfor %}</ol>
+    </div>
+    {% else %}
+    <div class="empty">Nenhuma lacuna encontrada nas respostas. Continue verificando todo mês para manter a nota.</div>
+    {% endfor %}
+
+    <h2>Os 12 controles</h2>
+    <table>
+      <tr><th>Controle</th><th>Área</th><th>Situação</th></tr>
+      {% for c in controles %}
+      <tr><td>{{ c.id }} · {{ c.nome }}</td><td>{{ c.area }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>
+</section>
+
+</body>
+</html>

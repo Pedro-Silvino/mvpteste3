@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-19 23:00 — T06 motor de nota + T07 relatório Express (em andamento)
+- Feito: `worker/app/engine/scoring.py` (respostas → `control_results` → nota, faixa, 3 maiores lacunas; "não sei" = sem_dado = 0). Template `worker/templates/relatorio_express.html` (2 páginas A4, identidade DataDops, selo Autoavaliado, rodapé legal) + `app/report.py` (Jinja com autoescape → Playwright PDF). Job `processar`: calcula, gera PDF, sobe em `reports/{org}/{assessment}/express.pdf`, grava SHA-256 em `reports`, grava `control_results` e marca o assessment `concluido`. Web: `/resultado` (nota, faixa, lacunas, atualiza sozinho enquanto processa) e `/resultado/pdf` (URL assinada de 5 min). Também corrigido: salvar resposta (sem upsert) e questionário avançando na hora.
+- Arquivos: `worker/app/{engine/scoring.py,engine/base12.json,report.py,runner.py,db.py}`, `worker/templates/relatorio_express.html`, `apps/web/app/resultado/*`, `apps/web/lib/result.ts`. Deps: playwright 1.49.1 (+ `playwright install chromium`), jinja2 3.1.5.
+- Decisões: nenhuma nova. Cópia do catálogo no worker tem teste de igualdade com docs/BASE12.json.
+- Testes: worker pytest 32/32 (nota: tudo sim=100, tudo não=0, não sei=0, pesos, faixas; PDF de 2 páginas; rodapé legal; sem termos proibidos; escape de HTML); web Vitest 33/33, lint e typecheck ok. Visual do PDF conferido por captura (não sobrepõe o rodapé). Não testado contra o Supabase real.
+- Próximo passo: Pedro roda o worker com `worker/.env` e abre `/resultado`. Deploy do worker precisa de Chromium no container (`playwright install --with-deps chromium`), ver T08.
+- Bloqueios: botão "Quero contratar" (alerta para staff) exige migração; divergência scan x resposta só entra com o agente (T12).
+
 ## 2026-10-19 21:00 — T03 enxuta + T04 questionário + T05 scan externo
 - Feito: `/comecar` só com domínio + aceite (nome provisório = domínio; CNPJ/setor/porte ficam para depois; colunas já aceitam nulo, sem migração). `/diagnostico` = 16 perguntas (4 de cadastro + 12 controles), uma por tela, Voltar, "Não sei", salva a cada resposta e retoma de onde parou; ao fim chama `submit_assessment` e vai para `/resultado` (placeholder até T06/T07). Worker: scan externo X01–X06 (timeout 10 s, recusa IP privado), loop de jobs com 3 tentativas, acesso ao Supabase via PostgREST com service role; o loop sobe junto com o FastAPI se as variáveis existirem.
 - Arquivos: `apps/web/lib/{questionnaire.ts,base12.json}`, `apps/web/app/{diagnostico,resultado,comecar}/*`, `worker/app/{main,db,runner}.py`, `worker/app/scans/external.py`, `worker/tests/*`. Deps: dnspython 2.7.0; httpx 0.27.2 (de dev para runtime).
