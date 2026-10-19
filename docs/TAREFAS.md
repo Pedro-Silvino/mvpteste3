@@ -18,20 +18,20 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - Pedro vira staff → movido para a T03 (depende do primeiro login).
   - Aceite: 17 tabelas com RLS ligado; advisors sem erro crítico; `supabase/tests/01_rls_test.sql` passa num Postgres local (instruções no arquivo).
 
-- [~] **T03 Login e cadastro da empresa** — código e testes prontos (fluxo D16: diagnóstico anônimo → `/conta` com e-mail e senha); falta teste ponta a ponta (Pedro: ajustes no painel do Supabase, ver HISTORICO)
+- [~] **T03 Login e cadastro da empresa** — (D18: /comecar agora pede só domínio + termos) código e testes prontos (fluxo D16: diagnóstico anônimo → `/conta` com e-mail e senha); falta teste ponta a ponta (Pedro: ajustes no painel do Supabase, ver HISTORICO)
   - ~~`/entrar` com código OTP~~ → D16: `/entrar` com e-mail + senha; `/conta` salva o diagnóstico; `/esqueci-senha`.
   - `/comecar`: formulário (nome, CNPJ, domínio, setor, faixa de funcionários) + checkbox de termos + captura de `?p=CODIGO` (cookie de 30 dias). Chama `create_organization`.
   - Validação com Zod. Máscara de CNPJ.
   - Depois do primeiro login do Pedro: `update profiles set is_staff = true where id = '<id do Pedro>';` (SQL aprovado pelo Pedro).
   - Aceite: empresa criada, parceiro gravado, 3 aceites gravados, job `scan_externo` criado. Usuário B não vê a empresa de A.
 
-- [ ] **T04 Questionário Base 12**
+- [~] **T04 Questionário Base 12** — código e testes prontos; falta Pedro testar no celular (375 px) e ponta a ponta
   - `/diagnostico`: 4 perguntas de cadastro extra + 12 perguntas, uma por tela, barra de progresso, botão "Não sei", pode voltar.
   - Perguntas vêm de `docs/BASE12.json` (copiar para `apps/web/lib/base12.json` via script, fonte única continua em `docs/`).
   - Ao fim chama `submit_assessment`.
   - Aceite: funciona no celular (375 px); respostas salvas a cada tela (sair e voltar não perde).
 
-- [ ] **T05 Worker + scan externo**
+- [~] **T05 Worker + scan externo** — código e testes prontos; falta rodar o worker com SUPABASE_URL/SERVICE_ROLE_KEY e ver o scan_result gravado
   - FastAPI com loop que pega `jobs` pendentes (`for update skip locked`), máx. 3 tentativas.
   - `app/scans/external.py`: checagens X01–X06 do BASE12.json. Só consultas públicas. Timeout de 10 s por checagem.
   - Grava `scan_results` (module `externo`, summary, sha256 do JSON canônico) e `assessments.external_score`.

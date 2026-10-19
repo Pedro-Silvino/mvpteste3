@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-19 21:00 — T03 enxuta + T04 questionário + T05 scan externo
+- Feito: `/comecar` só com domínio + aceite (nome provisório = domínio; CNPJ/setor/porte ficam para depois; colunas já aceitam nulo, sem migração). `/diagnostico` = 16 perguntas (4 de cadastro + 12 controles), uma por tela, Voltar, "Não sei", salva a cada resposta e retoma de onde parou; ao fim chama `submit_assessment` e vai para `/resultado` (placeholder até T06/T07). Worker: scan externo X01–X06 (timeout 10 s, recusa IP privado), loop de jobs com 3 tentativas, acesso ao Supabase via PostgREST com service role; o loop sobe junto com o FastAPI se as variáveis existirem.
+- Arquivos: `apps/web/lib/{questionnaire.ts,base12.json}`, `apps/web/app/{diagnostico,resultado,comecar}/*`, `worker/app/{main,db,runner}.py`, `worker/app/scans/external.py`, `worker/tests/*`. Deps: dnspython 2.7.0; httpx 0.27.2 (de dev para runtime).
+- Decisões: D18 (cadastro enxuto). `apps/web/lib/base12.json` é cópia de `docs/BASE12.json`; teste falha se divergirem.
+- Testes: web Vitest 30/30, lint/typecheck/build ok; worker pytest 15/15; scan real em google.com e datadops.com.br funcionou (X03 sem_dado e X05 falha em ambos são esperados, não há bug).
+- Próximo passo: Pedro cria `worker/.env` (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY), roda `cd worker; uv run uvicorn app.main:app` e testa o fluxo. Depois T06 (motor de nota; o job `processar` ainda não é consumido).
+- Bloqueios: chave service role (só Pedro tem). Job que ficar em "rodando" por queda do worker ainda não é recuperado.
+
 ## 2026-10-19 18:00 — T03 ajustada (D16: diagnóstico antes do cadastro)
 - Feito: `/comecar` público (sessão anônima criada ao enviar o formulário); `/conta` converte em e-mail + senha (2 passos: e-mail, depois senha); `/entrar` por senha; `/esqueci-senha` + `/auth/callback` + `/redefinir-senha`; OTP removido.
 - Testes: Vitest 25/25 (novo `lib/validation/auth.test.ts`); lint/typecheck/build ok de pasta limpa; smoke: `/diagnostico` e `/conta` sem sessão → `/comecar`, `/comecar` abre sem login, callback com `next=//evil.com` não vaza.

@@ -1,0 +1,197 @@
+"""Scan externo (X01-X06 do BASE12.json). Somente consultas públicas: DNS, certificado TLS e
+cabeçalhos HTTP da página inicial. Nenhuma varredura de portas."""
+
+import hashlib
+import ipaddress
+import json
+import re
+import socket
+import ssl
+import time
+from collections.abc import Callable
+
+import dns.exception
+import dns.resolver
+import httpx
+
+TIMEOUT = 10  # segundos por checagem
+DKIM_SELECTORS = ["selector1", "selector2", "google", "default", "k1", "s1"]
+WEIGHTS = {"X01": 1, "X02": 2, "X03": 1, "X04": 1, "X05": 1, "X06": 1}
+VALUE = {"ok": 1.0, "parcial": 0.5, "falha": 0.0}  # sem_dado fica fora do cálculo
+
+_DOMAIN_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
+
+
+# ---------------------------------------------------------------- avaliação (funções puras)
+
+
+def eval_spf(txts: list[str]) -> str:
+    for t in txts:
+        t = t.strip().lower()
+        if t.startswith("v=spf1"):
+            return "ok" if t.endswith(("-all", "~all")) else "falha"
+    return "falha"
+
+
+def eval_dmarc(txts: list[str]) -> str:
+    for t in txts:
+        t = t.strip().lower().replace(" ", "")
+        if t.startswith("v=dmarc1"):
+            if "p=reject" in t or "p=quarantine" in t:
+                return "ok"
+            return "parcial"
+    return "falha"
+
+
+def eval_dkim(found: bool) -> str:
+    return "ok" if found else "sem_dado"  # não achar seletor comum não prova ausência
+
+
+def eval_tls(days_left: int | None) -> str:
+    if days_left is None or days_left <= 0:
+        return "falha"
+    return "ok" if days_left > 15 else "parcial"
+
+
+def eval_https_redirect(final_url: str | None) -> str:
+    return "ok" if final_url and final_url.lower().startswith("https://") else "falha"
+
+
+def eval_headers(headers: dict[str, str]) -> str:
+    return "ok" if any(k.lower() == "strict-transport-security" for k in headers) else "parcial"
+
+
+def external_score(checks: dict[str, str]) -> int | None:
+    total = got = 0.0
+    for cid, status in checks.items():
+        if status not in VALUE:
+            continue
+        total += WEIGHTS[cid]
+        got += WEIGHTS[cid] * VALUE[status]
+    return None if total == 0 else round(100 * got / total)
+
+
+def build_summary(domain: str, checks: dict[str, str]) -> dict:
+    return {"domain": domain, "checks": dict(sorted(checks.items())), "score": external_score(checks)}
+
+
+def canonical_sha256(summary: dict) -> str:
+    raw = json.dumps(summary, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+# ---------------------------------------------------------------- segurança do alvo
+
+
+def valid_domain(domain: str) -> bool:
+    return bool(_DOMAIN_RE.match(domain))
+
+
+def is_public_ip(ip: str) -> bool:
+    try:
+        return ipaddress.ip_address(ip).is_global
+    except ValueError:
+        return False
+
+
+# ---------------------------------------------------------------- coleta (rede)
+
+
+def _resolver() -> dns.resolver.Resolver:
+    r = dns.resolver.Resolver()
+    r.lifetime = TIMEOUT
+    r.timeout = TIMEOUT
+    return r
+
+
+def _txt(name: str) -> list[str]:
+    try:
+        answers = _resolver().resolve(name, "TXT")
+    except (dns.exception.DNSException, OSError):
+        return []
+    return ["".join(p.decode() for p in rr.strings) for rr in answers]
+
+
+def _dkim_found(domain: str) -> bool:
+    r = _resolver()
+    for sel in DKIM_SELECTORS:
+        for rtype in ("TXT", "CNAME"):
+            try:
+                r.resolve(f"{sel}._domainkey.{domain}", rtype)
+                return True
+            except (dns.exception.DNSException, OSError):
+                continue
+    return False
+
+
+def _public_addresses(domain: str) -> list[str]:
+    """IPs do domínio; vazio se algum não for público (evita apontar o scan para rede interna)."""
+    try:
+        infos = socket.getaddrinfo(domain, 443, type=socket.SOCK_STREAM)
+    except OSError:
+        return []
+    ips = list({i[4][0] for i in infos})
+    return ips if ips and all(is_public_ip(ip) for ip in ips) else []
+
+
+def _tls_days_left(domain: str, ip: str) -> int | None:
+    ctx = ssl.create_default_context()
+    try:
+        with socket.create_connection((ip, 443), timeout=TIMEOUT) as sock:
+            with ctx.wrap_socket(sock, server_hostname=domain) as tls:
+                cert = tls.getpeercert()
+        return int((ssl.cert_time_to_seconds(cert["notAfter"]) - time.time()) // 86400)
+    except (OSError, ssl.SSLError, KeyError, ValueError):
+        return None
+
+
+def _http_get(url: str, max_redirects: int = 0) -> httpx.Response | None:
+    """GET sem seguir redirecionamento automático; segue manualmente só até max_redirects saltos."""
+    try:
+        with httpx.Client(follow_redirects=False, timeout=TIMEOUT, verify=ssl.create_default_context(),
+                          headers={"User-Agent": "DataDops-Sentinela/1.0"}) as client:
+            r = client.get(url)
+            for _ in range(max_redirects):
+                loc = r.headers.get("location")
+                if r.status_code not in (301, 302, 303, 307, 308) or not loc:
+                    break
+                r = client.get(str(r.url.join(loc)))
+            return r
+    except httpx.HTTPError:
+        return None
+
+
+def run_external_scan(domain: str) -> dict[str, str]:
+    """Roda X01-X06 e devolve {id: ok|parcial|falha|sem_dado}. Cada checagem isolada: uma falha não derruba as outras."""
+    checks: dict[str, str] = {}
+
+    def safe(cid: str, fn: Callable[[], str]) -> None:
+        try:
+            checks[cid] = fn()
+        except Exception:  # noqa: BLE001 - checagem quebrada vira sem_dado, nunca derruba o scan
+            checks[cid] = "sem_dado"
+
+    safe("X01", lambda: eval_spf(_txt(domain)))
+    safe("X02", lambda: eval_dmarc(_txt(f"_dmarc.{domain}")))
+    safe("X03", lambda: eval_dkim(_dkim_found(domain)))
+
+    ips = _public_addresses(domain)
+    if not ips:
+        for cid in ("X04", "X05", "X06"):
+            checks[cid] = "sem_dado"
+        return checks
+
+    safe("X04", lambda: eval_tls(_tls_days_left(domain, ips[0])))
+
+    def x05() -> str:
+        # http:// deve acabar em https:// (aceita um salto intermediário, ex.: http://x -> http://www.x -> https://www.x)
+        r = _http_get(f"http://{domain}/", max_redirects=3)
+        return eval_https_redirect(str(r.url) if r else None)
+
+    def x06() -> str:
+        r = _http_get(f"https://{domain}/")
+        return "sem_dado" if r is None else eval_headers(dict(r.headers))
+
+    safe("X05", x05)
+    safe("X06", x06)
+    return checks

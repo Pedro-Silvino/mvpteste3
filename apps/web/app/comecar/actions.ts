@@ -15,7 +15,7 @@ export type FormState = {
   values?: Record<string, string>;
 };
 
-const FIELDS = ["name", "cnpj", "domain", "sector", "employeesRange"] as const;
+const FIELDS = ["domain"] as const;
 
 export async function createOrganization(_prev: FormState, formData: FormData): Promise<FormState> {
   const raw = Object.fromEntries(
@@ -49,11 +49,12 @@ export async function createOrganization(_prev: FormState, formData: FormData): 
   const partner = normalizePartnerCode(cookieStore.get(PARTNER_COOKIE)?.value);
 
   const { error } = await supabase.rpc("create_organization", {
-    p_name: parsed.data.name,
-    p_cnpj: parsed.data.cnpj,
+    p_name: parsed.data.domain, // placeholder until the owner fills in the company name
+    p_cnpj: "",
     p_domain: parsed.data.domain,
-    p_sector: parsed.data.sector,
-    p_employees_range: parsed.data.employeesRange,
+    // Optional in the table (nullable); the generated RPC types don't mark them as such.
+    p_sector: null as unknown as string,
+    p_employees_range: null as unknown as string,
     p_partner_code: partner ?? "",
     p_terms_version: process.env.TERMS_VERSION ?? "1.0",
   });

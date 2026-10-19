@@ -1,0 +1,75 @@
+"""Acesso ao Supabase pelo worker (service role, só no servidor) via PostgREST."""
+
+import os
+from datetime import datetime, UTC
+from pathlib import Path
+
+import httpx
+
+
+def load_env(path: Path = Path(__file__).resolve().parent.parent / ".env") -> None:
+    """Carrega worker/.env (se existir) sem sobrescrever variáveis já definidas. Nunca imprime valores."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+class SupabaseDb:
+    def __init__(self, url: str, service_key: str):
+        self.client = httpx.Client(
+            base_url=f"{url.rstrip('/')}/rest/v1",
+            headers={"apikey": service_key, "Authorization": f"Bearer {service_key}"},
+            timeout=20,
+        )
+
+    @classmethod
+    def from_env(cls) -> "SupabaseDb":
+        load_env()
+        return cls(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+
+    def claim_job(self) -> dict | None:
+        r = self.client.get(
+            "/jobs",
+            params={"status": "eq.pendente", "kind": "eq.scan_externo", "order": "created_at", "limit": 1},
+        )
+        r.raise_for_status()
+        rows = r.json()
+        if not rows:
+            return None
+        job = rows[0]
+        # Conditional update = atomic claim: only one worker flips pendente -> rodando.
+        c = self.client.patch(
+            "/jobs",
+            params={"id": f"eq.{job['id']}", "status": "eq.pendente"},
+            json={"status": "rodando", "attempts": job["attempts"] + 1, "started_at": datetime.now(UTC).isoformat()},
+            headers={"Prefer": "return=representation"},
+        )
+        c.raise_for_status()
+        claimed = c.json()
+        return claimed[0] if claimed else None
+
+    def org_domain(self, org_id: str) -> str | None:
+        r = self.client.get("/organizations", params={"id": f"eq.{org_id}", "select": "domain"})
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0]["domain"] if rows else None
+
+    def save_scan_result(self, **kw) -> None:
+        kw["collected_at"] = kw["collected_at"].isoformat()
+        self.client.post("/scan_results", json=kw).raise_for_status()
+
+    def set_external_score(self, assessment_id: str, score: int | None) -> None:
+        self.client.patch(
+            "/assessments", params={"id": f"eq.{assessment_id}"}, json={"external_score": score}
+        ).raise_for_status()
+
+    def finish_job(self, job_id: str, status: str, error: str | None = None) -> None:
+        body = {"status": status, "error": error}
+        if status in ("ok", "erro"):
+            body["finished_at"] = datetime.now(UTC).isoformat()
+        self.client.patch("/jobs", params={"id": f"eq.{job_id}"}, json=body).raise_for_status()

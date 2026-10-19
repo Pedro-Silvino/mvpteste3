@@ -24,7 +24,7 @@ export default async function ComecarPage() {
       <div className="w-full max-w-xl rounded-2xl border border-line bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-n1">Sobre a sua empresa</h1>
         <p className="mt-2 text-muted">
-          Leva 1 minuto. Sem cadastro: você só cria e-mail e senha no final, para salvar o resultado.
+          Leva 10 segundos. Sem cadastro: você só cria e-mail e senha no final, para salvar o resultado.
         </p>
         <OrgForm />
       </div>
