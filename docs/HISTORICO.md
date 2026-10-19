@@ -16,6 +16,13 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-19 18:00 — T03 ajustada (D16: diagnóstico antes do cadastro)
+- Feito: `/comecar` público (sessão anônima criada ao enviar o formulário); `/conta` converte em e-mail + senha (2 passos: e-mail, depois senha); `/entrar` por senha; `/esqueci-senha` + `/auth/callback` + `/redefinir-senha`; OTP removido.
+- Testes: Vitest 25/25 (novo `lib/validation/auth.test.ts`); lint/typecheck/build ok de pasta limpa; smoke: `/diagnostico` e `/conta` sem sessão → `/comecar`, `/comecar` abre sem login, callback com `next=//evil.com` não vaza.
+- Painel do Supabase (só o Pedro): Authentication → Sign In/Providers: ligar **Allow anonymous sign-ins** e **Allow manual linking**; no provedor Email: manter senha, desligar **Confirm email**, mínimo de senha 8; URL Configuration: adicionar `http://localhost:3000/auth/callback` em Redirect URLs.
+- Ponto não verificado: com Confirm email desligado o `updateUser({email})` deve valer na hora, mas a doc do Supabase só descreve a conversão com verificação — testar `/conta` de verdade.
+- Riscos aceitos: D17.
+
 ## 2026-10-19 14:00 — T03 Login e cadastro da empresa (em andamento)
 - Feito: `/entrar` (e-mail + código OTP de 6 dígitos), `/comecar` (Zod, máscara e dígito de CNPJ, setor, faixa, aceite único cobrindo termos + privacidade + scan externo) via server action → `create_organization`; middleware (sessão, rotas protegidas, cookie `?p=` 30 dias httpOnly); layout com Archivo/Hanken e cores da marca; home; placeholders `/diagnostico`, `/termos`, `/privacidade`.
 - Arquivos: `apps/web/middleware.ts`, `apps/web/lib/{cnpj,partner,safe-redirect,request}.ts`, `apps/web/lib/validation/organization.ts`, `apps/web/lib/supabase/*`, `apps/web/app/{entrar,comecar,diagnostico,termos,privacidade}/*`.

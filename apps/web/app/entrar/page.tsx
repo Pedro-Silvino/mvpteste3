@@ -13,9 +13,7 @@ export default async function EntrarPage({
     <main className="flex flex-1 items-center justify-center bg-ice px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-line bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-n1">Entrar</h1>
-        <p className="mt-2 text-muted">
-          Sem senha: enviamos um código de 6 dígitos para o seu e-mail.
-        </p>
+        <p className="mt-2 text-muted">Para quem já salvou o diagnóstico com e-mail e senha.</p>
         <LoginForm next={safeNextPath(typeof next === "string" ? next : null)} />
       </div>
     </main>

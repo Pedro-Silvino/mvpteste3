@@ -4,7 +4,8 @@ import type { Database } from "./lib/database.types";
 import { normalizePartnerCode, PARTNER_COOKIE, PARTNER_COOKIE_MAX_AGE } from "./lib/partner";
 import { supabaseEnv } from "./lib/supabase/env";
 
-const PROTECTED = ["/comecar", "/diagnostico"];
+// Need a session (anonymous counts). /comecar is public: it creates the anonymous session.
+const NEEDS_SESSION = ["/diagnostico", "/conta"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -28,13 +29,13 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   let redirectTo: URL | null = null;
 
-  if (!user && PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    redirectTo = new URL("/entrar", request.url);
-    redirectTo.searchParams.set("next", pathname + search);
-  } else if (user && pathname === "/entrar") {
+  if (!user && NEEDS_SESSION.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    redirectTo = new URL("/comecar", request.url);
+  } else if (user && !user.is_anonymous && pathname === "/entrar") {
+    // An anonymous visitor may still want to log into an existing account.
     redirectTo = new URL("/comecar", request.url);
   }
 

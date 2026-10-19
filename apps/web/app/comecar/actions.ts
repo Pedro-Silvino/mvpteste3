@@ -6,6 +6,7 @@ import { z } from "zod";
 import { normalizePartnerCode, PARTNER_COOKIE } from "@/lib/partner";
 import { clientIp, createOrgErrorMessage } from "@/lib/request";
 import { createClient } from "@/lib/supabase/server";
+import { authErrorMessage } from "@/lib/validation/auth";
 import { organizationSchema } from "@/lib/validation/organization";
 
 export type FormState = {
@@ -32,7 +33,17 @@ export async function createOrganization(_prev: FormState, formData: FormData): 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/entrar?next=/comecar");
+
+  // Diagnostic comes before sign-up: no session yet -> anonymous one (real auth.uid, so RLS and
+  // the RPC work unchanged). It becomes a permanent account later, at /conta. Created only here,
+  // after the form validated, so merely visiting /comecar never creates users.
+  if (!user) {
+    const { error: anonError } = await supabase.auth.signInAnonymously();
+    if (anonError) {
+      console.error("signInAnonymously failed", { code: anonError.code, status: anonError.status });
+      return { error: authErrorMessage(anonError.code, anonError.status), values };
+    }
+  }
 
   const cookieStore = await cookies();
   const partner = normalizePartnerCode(cookieStore.get(PARTNER_COOKIE)?.value);

@@ -18,7 +18,7 @@ Preços: **não definidos**. Campo `plan` na organização; nada de valor na tel
 
 | # | Etapa | Cliente faz | Sistema faz | Semana |
 |---|---|---|---|---|
-| 1 | Entrada | Abre o link (site, corretor ou parceiro: `?p=CODIGO`). Entra com e-mail (código de 6 dígitos). Informa empresa, CNPJ, domínio, setor, nº de funcionários. Aceita termos | Cria organização, grava parceiro de origem, grava aceite em `authorizations` | 1 |
+| 1 | Entrada | Abre o link (site, corretor ou parceiro: `?p=CODIGO`). Informa empresa, CNPJ, domínio, setor, nº de funcionários e aceita termos (sem login: o sistema abre uma sessão anônima). Cria e-mail e senha só no fim, para salvar o resultado | Cria organização, grava parceiro de origem, grava aceite em `authorizations` | 1 |
 | 2 | Scan externo | Espera ~30 s | Worker checa: MX, SPF, DMARC, DKIM (seletores comuns), certificado TLS (validade, emissor), HTTPS obrigatório, cabeçalhos de segurança. Mostra "nota externa" | 1 |
 | 3 | Questionário | Responde 12 perguntas (sempre existe "Não sei") | Calcula nota 0–100, mostra 3 maiores lacunas, gera **PDF Express** e envia por e-mail | 1 |
 | 4 | Contratação | Pequena: assina Essencial. Média: pede proposta (resposta em 1 dia útil) | Fase 1: botão "Quero contratar" → alerta para a equipe. Fase 3: checkout Asaas + contrato | 1 / 3 |
@@ -38,8 +38,8 @@ Preços: **não definidos**. Campo `plan` na organização; nada de valor na tel
 ## 5. Telas
 
 **Cliente**
-1. `/entrar` — e-mail + código.
-2. `/comecar` — dados da empresa + aceite.
+1. `/comecar` — dados da empresa + aceite (porta de entrada, sem login).
+2. `/conta` — salvar o diagnóstico: e-mail + senha (converte a sessão anônima). `/entrar` — login de volta; `/esqueci-senha`.
 3. `/diagnostico` — scan externo (barra de progresso) → 12 perguntas, uma por tela, com barra de progresso e botão "Não sei".
 4. `/resultado` — nota, 3 lacunas, botão baixar PDF, botão "Quero contratar".
 5. `/painel` — nota atual, evolução mês a mês, checklist dos 12 controles, alertas.
