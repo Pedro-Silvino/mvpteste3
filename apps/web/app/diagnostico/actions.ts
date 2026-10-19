@@ -18,17 +18,26 @@ export async function saveAnswer(input: { assessmentId: string; questionId: stri
     return { ok: false as const };
   }
   const supabase = await createClient();
-  const { error } = await supabase.from("answers").upsert(
-    {
-      assessment_id: parsed.data.assessmentId,
-      question_id: parsed.data.questionId,
-      value: parsed.data.value,
-      answered_at: new Date().toISOString(),
-    },
-    { onConflict: "assessment_id,question_id" },
-  );
+  const { assessmentId, questionId, value } = parsed.data;
+  // Not upsert: the table only grants UPDATE on (value, answered_at), and ON CONFLICT DO UPDATE
+  // would also try to set the key columns. So: update first, insert when nothing was there yet.
+  const updated = await supabase
+    .from("answers")
+    .update({ value, answered_at: new Date().toISOString() })
+    .eq("assessment_id", assessmentId)
+    .eq("question_id", questionId)
+    .select("question_id");
+  if (updated.error) {
+    console.error("saveAnswer update failed", { code: updated.error.code, message: updated.error.message });
+    return { ok: false as const };
+  }
+  if (updated.data.length > 0) return { ok: true as const };
+
+  const { error } = await supabase
+    .from("answers")
+    .insert({ assessment_id: assessmentId, question_id: questionId, value });
   if (error) {
-    console.error("saveAnswer failed", { code: error.code });
+    console.error("saveAnswer insert failed", { code: error.code, message: error.message });
     return { ok: false as const };
   }
   return { ok: true as const };
