@@ -6,30 +6,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 
 ---
 
-## PROVA CYBER — backlog ativo (D19, spec em docs/SPEC_PROVA_CYBER.md)
-
-Reaproveita: T01–T03 (repo, Supabase, cadastro/sessão), T04 (tela de pergunta), T05 (scan externo), T07 (pipeline PDF). Itens que mudam o banco, RLS, autenticação ou cobrança: mostrar ao Pedro e esperar o "ok".
-
-- [ ] **P01 Modelo de dados** — migração: papéis (cliente/corretor/admin), corretor (SUSEP, Asaas), casos, perguntas (seed das 12), respostas, evidências (sha256), revisão por item, relatórios (número, validade, hash), pagamentos, assinaturas, comissões, consentimentos versionados. RLS em tudo + teste de isolamento (cliente A × B, corretor só status). Aceite: teste de RLS passa; advisors sem erro.
-- [ ] **P02 Corretor** — cadastro, termo de parceria [REVISÃO JURÍDICA], link e código único, painel só com status e comissões. Aceite: corretor nunca lê respostas nem evidências.
-- [ ] **P03 Cadastro do cliente** — vínculo com corretor pelo link, empresa/CNPJ/domínio/porte/faturamento/responsável, aceite versionado dos 3 itens (termos, privacidade, autorização de varredura), MFA opcional. Pendência: manter cadastro curto + completar antes do pagamento? (decidir com Pedro)
-- [ ] **P04 Questionário com evidência** — 12 perguntas, Sim/Não/Parcial, upload (PNG/JPG/PDF/XLSX/CSV ≤ 10 MB, SHA-256 no servidor, bucket privado, aviso de dados pessoais), salvar e continuar, enviar para revisão. Rate limit no upload.
-- [ ] **P05 Varredura externa passiva** — evoluir T05: TLS protocolo, cabeçalhos, portas/CVEs via InternetDB; só com autorização aceita; dispara no envio.
-- [ ] **P06 Painel admin** — fila de casos, revisão item a item (resposta + evidência + varredura), recomendação, MFA obrigatório, audit_log.
-- [ ] **P07 Relatório de Prova (PDF)** — template novo, número, validade 30 dias, SHA-256 do PDF, `/verificar/[numero]` público sem expor conteúdo.
-- [ ] **P08 Cobrança e liberação** — Asaas R$ 490 + split 15%, cupom PILOTO, webhook com validação, liberação só após pagamento, URL assinada 24 h.
-- [ ] **P09 E-mails transacionais** — Resend (ou similar): boas-vindas, lembretes D+2/D+5, em revisão, cobrança, relatório pronto, aviso mensal, alerta de queda, aviso ao corretor (sem detalhes).
-- [ ] **P10 Assinatura e monitoramento** — Asaas recorrente R$ 290 + split, varredura mensal, reconfirmação, evidência vencida, alerta de queda, relatório mensal, suspensão após 15 dias de atraso.
-- [ ] **P11 Página /sincor** — 3 passos, preço, "Sou corretor", "Sou empresa", FAQ, WhatsApp (31) 3568-1989.
-- [ ] **P12 Fechamento** — retenção de 12 meses (rotina), seeds de teste, revisão de segurança (CLAUDE.md §4 item a item), checklist de deploy, README de operação (revisar um caso em 15 min).
-
-Pendências do Pedro para este backlog: chave sandbox Asaas, chave do provedor de e-mail, textos jurídicos, logo SVG, DNS `app.datadops.com.br`, `worker/.env` (ver HISTORICO).
-
----
-
-# Backlog pré-pivô (arquivado — referência)
-
-## Semana 1 (pré-pivô) — Diagnóstico Express vendável
+## Semana 1 — Diagnóstico Express vendável
 
 - [x] **T01 Repositório e ferramentas**
   - Git, `.gitignore`, pnpm workspace, `apps/web` (Next.js 15 + TS + Tailwind), `worker/` (uv + FastAPI), Supabase CLI.

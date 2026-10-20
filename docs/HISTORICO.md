@@ -16,12 +16,6 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
-## 2026-10-20 — Pivô para Prova Cyber (D19–D23)
-- Feito: spec curta em `docs/SPEC_PROVA_CYBER.md`; decisões D19–D23 (pivô, preços, scan passivo no worker, rodapé legal, papéis e retenção); backlog novo P01–P12 em `docs/TAREFAS.md` (antigo arquivado). Nenhum código novo.
-- Estado do que existia: T03/T04/T05/T06/T07 com código e testes, mas **nunca rodou ponta a ponta no banco real**: o job `processar` do cadastro de teste está pendente porque `worker/.env` não foi lido (log: "fila de jobs DESLIGADA"). Alternativa sem arquivo: definir `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` na sessão do PowerShell antes de subir o `uvicorn`.
-- Próximo passo: P01 (migração). Mostrar o SQL ao Pedro antes de aplicar.
-- Bloqueios: respostas do Pedro às perguntas abertas da P03 e do modelo de corretor; chaves Asaas/e-mail.
-
 ## 2026-10-19 23:00 — T06 motor de nota + T07 relatório Express (em andamento)
 - Feito: `worker/app/engine/scoring.py` (respostas → `control_results` → nota, faixa, 3 maiores lacunas; "não sei" = sem_dado = 0). Template `worker/templates/relatorio_express.html` (2 páginas A4, identidade DataDops, selo Autoavaliado, rodapé legal) + `app/report.py` (Jinja com autoescape → Playwright PDF). Job `processar`: calcula, gera PDF, sobe em `reports/{org}/{assessment}/express.pdf`, grava SHA-256 em `reports`, grava `control_results` e marca o assessment `concluido`. Web: `/resultado` (nota, faixa, lacunas, atualiza sozinho enquanto processa) e `/resultado/pdf` (URL assinada de 5 min). Também corrigido: salvar resposta (sem upsert) e questionário avançando na hora.
 - Arquivos: `worker/app/{engine/scoring.py,engine/base12.json,report.py,runner.py,db.py}`, `worker/templates/relatorio_express.html`, `apps/web/app/resultado/*`, `apps/web/lib/result.ts`. Deps: playwright 1.49.1 (+ `playwright install chromium`), jinja2 3.1.5.
