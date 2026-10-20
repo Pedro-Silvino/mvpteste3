@@ -7,16 +7,21 @@ from pathlib import Path
 import httpx
 
 
-def load_env(path: Path = Path(__file__).resolve().parent.parent / ".env") -> None:
-    """Carrega worker/.env (se existir) sem sobrescrever variáveis já definidas. Nunca imprime valores."""
-    if not path.is_file():
-        return
-    for line in path.read_text(encoding="utf-8").splitlines():
+def load_env(path: Path = Path(__file__).resolve().parent.parent / ".env") -> dict:
+    """Carrega worker/.env (se existir) sem sobrescrever variáveis já definidas. Nunca imprime valores.
+    Aceita BOM do Windows, CRLF, 'export ' e aspas. Devolve só metadados (arquivo achado? quais chaves)."""
+    status = {"path": str(path), "found": path.is_file(), "keys": []}
+    if not status["found"]:
+        return status
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        key = key.strip().removeprefix("export ").strip()
+        os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+        status["keys"].append(key)
+    return status
 
 
 class SupabaseDb:

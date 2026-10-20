@@ -93,5 +93,10 @@ def process_one(db: Db) -> bool:
 
 def run_forever(db: Db, idle_seconds: float = 5.0) -> None:
     while True:
-        if not process_one(db):
+        try:
+            worked = process_one(db)
+        except Exception:  # noqa: BLE001 - falha de rede/banco não pode matar o loop
+            log.exception("falha ao consultar a fila; tentando de novo")
+            worked = False
+        if not worked:
             time.sleep(idle_seconds)
