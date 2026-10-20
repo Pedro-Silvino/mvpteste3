@@ -9,6 +9,7 @@ from app.db import SupabaseDb, load_env
 from app.runner import run_forever
 
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("sentinela.worker")
 
 
 @asynccontextmanager
@@ -17,6 +18,9 @@ async def lifespan(_: FastAPI):
     # The job loop runs in a background thread; skipped when the service credentials aren't set (e.g. tests).
     if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
         threading.Thread(target=run_forever, args=(SupabaseDb.from_env(),), daemon=True).start()
+        log.info("fila de jobs LIGADA")
+    else:
+        log.warning("fila de jobs DESLIGADA: faltam SUPABASE_URL e/ou SUPABASE_SERVICE_ROLE_KEY (confira worker/.env)")
     yield
 
 
