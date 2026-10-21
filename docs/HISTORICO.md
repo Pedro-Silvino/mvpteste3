@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-22 — Funcionalidades restantes construídas (nada aplicado no remoto, nada publicado)
+- Feito: dados da empresa (`/painel/empresa`); área `/staff`; SOS; documentos (worker gera 3 modelos em PDF; painel pede, baixa e aprova); evidências (upload direto, verificação e SHA-256 no servidor); coletor Windows + `POST /ingest` + tela `/painel/agente`; diagnóstico completo (respostas + coletor, divergência); verificação mensal (agendador, comparação, alertas, relatório de 1 página, e-mail Resend opcional); worker recupera job travado e marca diagnóstico como erro; painel mostra alertas e histórico de relatórios; cabeçalhos de segurança; Dockerfile do worker; `docs/DEPLOY.md` e `docs/SEGURANCA.md`.
+- Arquivos principais: `supabase/migrations/20261021120000_request_plan.sql` e `20261022000000_features.sql` (NÃO aplicadas), `supabase/tests/02_features_test.sql`, `agent/*`, `worker/app/{ingest,monthly,mailer,documents}.py`, `worker/app/engine/{mapping,diff}.py`, `worker/templates/{docs/*,relatorio_*}.html`, `apps/web/app/{painel,staff}/*`.
+- Decisões: D24, D25, D26.
+- Testes: web Vitest 63/63 (13 arquivos), lint e typecheck ok; worker pytest 111/111; banco local: 01_rls (T1–T16) + 02_features 50 verificações, sem FAIL. Coletor executado em -DryRun na máquina do Pedro. NÃO verificado: nada disso contra o Supabase real (migrações pendentes), visual no navegador, build de produção, imagem Docker, envio real do coletor, e-mail Resend.
+- Próximo passo: Pedro aprova as 2 migrações (resumo na conversa) → aplicar, `get_advisors`, `supabase gen types`, reprocessar o diagnóstico de teste, ativar plano de teste e passar pelo roteiro de `docs/DEPLOY.md` §4. Depois: ajustes finais.
+- Bloqueios: ok do Pedro nas migrações; preços (T17/Asaas); textos jurídicos e modelos finais; chave do Resend; DNS.
+
 ## 2026-10-21 — Painel completo com menu lateral; fluxo vai direto para ele (D23)
 - Feito: `/painel` com layout próprio (barra lateral escura no desktop, abas roláveis no celular) e 6 telas: Visão geral (4 indicadores, riscos, próximos passos), Riscos (tipos de ataque; lacunas com "como resolver" só em plano pago), Relatório (anel da nota, download, o que cada formato traz), Planos (4 planos, pedido), Documentos (kits, orientações, coletor), Respostas. Questionário, criar conta, redefinir senha e cadastro agora terminam em `/painel`.
 - Arquivos: `apps/web/app/painel/*`, `apps/web/lib/painel-data.ts`, `apps/web/app/_components/threat-section.tsx`, `apps/web/app/resultado/*`.

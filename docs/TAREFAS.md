@@ -47,46 +47,46 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - `/resultado`: nota, faixa, 3 maiores lacunas, botão baixar (URL assinada 5 min), botão "Quero contratar" (cria alerta para staff).
   - Aceite: PDF de 2 páginas, rodapé legal presente, abre no celular. Pedro aprova o visual.
 
-- [ ] **T08 Deploy da semana 1**
+- [~] **T08 Deploy da semana 1** — artefatos prontos (`worker/Dockerfile`, cabeçalhos de segurança, `docs/DEPLOY.md`); nada foi publicado e a imagem do worker não foi testada (sem Docker na máquina). Falta: Pedro pedir o deploy e apontar o DNS.
   - Web na Vercel, worker no Railway (ou Fly.io). Variáveis de ambiente configuradas. Domínio `app.datadops.com.br` (Pedro aponta o DNS).
   - Aceite: fluxo completo em produção com uma empresa de teste; logs sem segredo exposto.
 
 ## Semana 2 — Agente e diagnóstico completo
 
-- [ ] **T09 Tela do agente e ingestão**
+- [~] **T09 Tela do agente e ingestão** — código e testes prontos (`/painel/agente`, `POST /ingest` com validação rígida, limite de 10/h, token revogado recusado). Falta testar com o banco real depois da migração.
   - `/agente`: gerar token (`create_agent_token`, mostrado uma vez), revogar, instruções para a TI.
   - Worker: `POST /ingest` com header `Authorization: Bearer snt_...` → valida hash, validade, revogação; limite de tamanho (256 KB) e de frequência (10/h por token); grava `scan_results`; atualiza `last_used_at`.
   - Aceite: token revogado é recusado; payload com lista de e-mails é rejeitado pelo validador.
 
-- [ ] **T10 Agente Windows (coletor)**
+- [~] **T10 Agente Windows (coletor)** — `agent/sentinela-agent.ps1` roda sem admin e o `-DryRun` foi executado na máquina do Pedro; contrato com o worker coberto por teste; hash publicado no painel. Falta: envio real com um token e teste em Windows 10 (só rodou no 11).
   - `agent/sentinela-agent.ps1`: coleta C04, C05, C08, C09 (admin local), C10 sem nomes de usuário; hostname vira SHA-256; salva JSON completo numa pasta local escolhida pelo cliente; envia só o resumo + hash.
   - Script assinado ou com hash publicado no portal. README para a TI em linguagem simples.
   - Aceite: roda sem admin (o que não der, marca `sem_dado`); roda em Windows 10 e 11.
 
-- [ ] **T11 Importação Maester (M365)**
+- [~] **T11 Importação Maester (M365)** — o worker já aceita e mapeia o resumo do M365 (C03 e C09, sem nomes). A coleta com o Maester ainda não está no coletor: a TI roda o Maester e fala com a equipe.
   - Agente roda Maester (se a TI marcar M365) e extrai só: % usuários com MFA, admins com MFA, nº de admins globais.
   - Aceite: resumo sem nomes; mapeado para C03 e C09.
 
-- [ ] **T12 Diagnóstico completo**
+- [~] **T12 Diagnóstico completo** — o worker junta respostas + coletor (scan manda mais, divergência marcada), gera o PDF completo e o painel mostra fonte e divergência. Falta teste com dados reais e a tabela "relação com o questionário da seguradora" (BASE12 tem os números, ainda não entrou no PDF).
   - Ao receber dados do agente, worker cria avaliação `completo` (copia respostas da última Express), recalcula e gera PDF completo (PRODUTO.md §8).
   - `/painel` e `/controle/[id]` mostram status, fonte, data e hash curto.
   - Aceite: divergência aparece no relatório; tabela "relação com questionário da seguradora" usa só os números das perguntas.
 
 ## Semana 3 — Correção e contratação
 
-- [ ] **T13 Checklist e fichas** — `/painel` com os 12 controles e a ficha "como corrigir" de cada um (texto do BASE12.json).
-- [ ] **T14 Documentos** — gerar Política, Plano de incidente e Designação a partir de modelos em `worker/templates/docs/` (Pedro fornece os textos). Aprovação via `approve_document`.
-- [ ] **T15 Upload de evidência** — bucket `evidence`, só PDF/PNG/JPG até 10 MB, sha256 calculado no servidor.
-- [ ] **T16 Staff** — `/staff`, `/staff/org/[id]` com revisão (`staff_review_control`) e selo Verificado.
-- [ ] **T17 Contratação** — [!] depende de preços (Pedro). Até lá: botão "Quero contratar" gera alerta. Depois: Asaas assinatura.
+- [~] **T13 Checklist e fichas** — `/painel/riscos` lista as lacunas com a ficha "como resolver" (planos pagos). Falta a visão com os 12 controles juntos e a página `/controle/[id]`.
+- [~] **T14 Documentos** — worker gera Política, Plano de incidente e Designação (modelos-base marcados [REVISÃO JURÍDICA]); painel pede, baixa e aprova. Falta: migração aplicada e os textos finais do Pedro/advogado.
+- [~] **T15 Upload de evidência** — `/painel/evidencias`: envio direto ao bucket, tipo real/tamanho/SHA-256 conferidos no servidor, só plano pago (barrado no banco). Falta: migração aplicada e rotina para apagar arquivos órfãos.
+- [~] **T16 Staff** — `/staff` (alertas, empresas) e `/staff/org/[id]` (ativar plano, revisar controle, resolver alerta). Falta: o selo "Verificado" (hoje a revisão só muda o status do controle) e migração aplicada.
+- [!] **T17 Contratação** — depende de preços (Pedro). Até lá: "Quero este plano" gera pedido para a equipe, que ativa o plano em `/staff`. Depois: Asaas.
 
 ## Semana 4 — Permanência
 
-- [ ] **T18 Execução mensal** — tarefa agendada do Windows criada pelo agente; worker gera avaliação `mensal`.
-- [ ] **T19 Comparação e alertas** — `diff.py` compara com o mês anterior; piora cria `alerts` + e-mail (Resend ou SMTP).
-- [ ] **T20 Relatório mensal** — PDF de 1 página.
-- [ ] **T21 SOS** — `/sos` cria `incidents` + e-mail para a equipe + mostra plano de incidente aprovado.
-- [ ] **T22 Revisão de segurança final** — checklist do CLAUDE.md §4 item a item, advisors, teste de RLS, revisão de dependências. Registrar resultado no HISTORICO.
+- [~] **T18 Execução mensal** — agendador no worker cria a verificação mensal (30 dias) para planos pagos. A tarefa agendada do Windows no coletor ainda não existe.
+- [~] **T19 Comparação e alertas** — `diff.py` compara com o mês anterior (só piora comprovada), cria alertas e e-mail via Resend (desligado sem chave). Falta teste com o banco real.
+- [~] **T20 Relatório mensal** — PDF de 1 página pronto e testado; aparece no histórico de relatórios do painel.
+- [~] **T21 SOS** — `/painel/sos` abre incidente, gera alerta crítico para a equipe e mostra os primeiros passos e o plano de incidente aprovado. Falta: e-mail imediato à equipe (hoje só o alerta em `/staff`) e migração aplicada.
+- [~] **T22 Revisão de segurança final** — primeira rodada feita em `docs/SEGURANCA.md`. Falta repetir depois do deploy (advisors, ambiente real).
 
 ---
 
