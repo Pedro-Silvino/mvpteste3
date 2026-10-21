@@ -240,11 +240,29 @@ def test_a_retryable_failure_does_not_mark_the_assessment(monkeypatch):
 
 
 def test_invalid_input_error_also_marks_the_assessment(monkeypatch):
-    db = FakeDb({**JOB, "attempts": 1}, domain="10.0.0.1")
+    def invalid(*_):
+        raise ValueError("invalid_answers")
+
+    monkeypatch.setattr("app.runner.compute_control_results", invalid)
+    db = ProcDb({**PROC, "attempts": 1})
     db.marked = []
     db.mark_assessment_error = lambda asmt: db.marked.append(asmt)
     process_one(db)
     assert db.finished[0][1] == "erro" and db.marked == ["a1"]
+
+
+def test_external_scan_giving_up_never_marks_the_assessment_as_error(monkeypatch):
+    # The questionnaire does not depend on the public checks: the person may still be answering (rascunho),
+    # and marking 'erro' would lock the answers (RLS) and show "Algo deu errado" in the panel.
+    def fail(_):
+        raise RuntimeError("x")
+
+    monkeypatch.setattr("app.runner.run_external_scan", fail)
+    for db in (FakeDb({**JOB, "attempts": 1}, domain="-invalido.com"), FakeDb({**JOB, "attempts": MAX_ATTEMPTS})):
+        db.marked = []
+        db.mark_assessment_error = lambda asmt, db=db: db.marked.append(asmt)
+        process_one(db)
+        assert db.finished[0][1] == "erro" and db.marked == []
 
 
 def test_loop_requeues_stale_jobs_periodically(monkeypatch):

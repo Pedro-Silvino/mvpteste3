@@ -180,8 +180,9 @@ def _mensal(db: Db, job: dict) -> None:
 
 
 def _fail_assessment(db: Db, job: dict) -> None:
-    """Job desistiu de vez: o diagnóstico vai para 'erro' (a tela deixa de girar e avisa), em vez de ficar 'processando'."""
-    if job.get("assessment_id") and job["kind"] in ("processar", "mensal", "scan_externo"):
+    """Job desistiu de vez: o diagnóstico vai para 'erro' (a tela deixa de girar e avisa), em vez de ficar 'processando'.
+    O scan externo fica de fora: a nota não depende dele, e a pessoa pode ainda estar respondendo (rascunho)."""
+    if job.get("assessment_id") and job["kind"] in ("processar", "mensal"):
         try:
             db.mark_assessment_error(job["assessment_id"])
         except Exception:  # noqa: BLE001
