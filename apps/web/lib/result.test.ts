@@ -23,6 +23,11 @@ describe("openGaps", () => {
   it("lists every open control by weight, then severity, and skips the ones that are met", () => {
     expect(openGaps(rows).map((g) => g.id)).toEqual(["C03", "C06", "C07", "C01"]);
   });
+  it("carries the source and the divergence flag (collector data beats the answer)", () => {
+    const g = openGaps([{ control_id: "C04", status: "nao_atende", source: "scan", divergence: true }, { control_id: "C05", status: "parcial" }]);
+    expect(g.find((x) => x.id === "C04")).toMatchObject({ source: "scan", divergence: true });
+    expect(g.find((x) => x.id === "C05")).toMatchObject({ source: "questionario", divergence: false });
+  });
   it("carries the fix steps", () => {
     expect(openGaps(rows)[0].steps.length).toBeGreaterThan(0);
   });

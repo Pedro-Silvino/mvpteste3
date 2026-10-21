@@ -35,6 +35,14 @@ export default async function RiscosPage() {
                   </div>
                   <span className={`shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold ${CHIP[g.status]}`}>{STATUS_LABEL[g.status]}</span>
                 </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-ice px-2.5 py-0.5 text-xs font-semibold text-n3">
+                    {g.source === "scan" ? "Verificado pelo coletor" : g.source === "revisao" ? "Revisão da equipe" : "Resposta da empresa"}
+                  </span>
+                  {g.divergence && (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Resposta diferente do verificado</span>
+                  )}
+                </div>
                 <p className="mt-2 text-sm text-muted">{g.why}</p>
                 <ol className="mt-3 list-inside list-decimal space-y-1 text-sm text-ink">
                   {g.steps.map((s) => (

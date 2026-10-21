@@ -32,10 +32,22 @@ export const getPainel = cache(async () => {
   if (!assessment) redirect("/comecar");
   if (assessment.status === "rascunho") redirect("/diagnostico");
 
+  // Collector data produces a "completo" assessment (answers + what the collector saw). When there is one, it is what the panel shows.
+  const { data: completo } = await supabase
+    .from("assessments")
+    .select("id, score")
+    .eq("org_id", orgId)
+    .eq("kind", "completo")
+    .eq("status", "concluido")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const shownId = completo?.id ?? assessment.id;
+
   const [{ data: report }, { data: answers }, { data: results }, { data: requests }, scan] = await Promise.all([
     supabase.from("reports").select("created_at").eq("assessment_id", assessment.id).eq("kind", "express").limit(1).maybeSingle(),
     supabase.from("answers").select("question_id, value").eq("assessment_id", assessment.id),
-    supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id),
+    supabase.from("control_results").select("control_id, status, source, divergence").eq("assessment_id", shownId),
     supabase.from("alerts").select("message").eq("org_id", orgId).is("resolved_at", null).like("message", "Pedido de proposta:%").limit(1),
     latestExternalScan(supabase, orgId),
   ]);
@@ -47,7 +59,8 @@ export const getPainel = cache(async () => {
     assessment,
     ready: assessment.status === "concluido" && assessment.score !== null && !!report,
     failed: assessment.status === "erro",
-    score: assessment.score as number | null,
+    score: (completo?.score ?? assessment.score) as number | null,
+    fromCollector: !!completo,
     savedOn: report?.created_at ?? null,
     paid: isPaidPlan(org.plan),
     profileComplete: !!org.cnpj && !!org.sector && !!org.employees_range && org.name !== org.domain,

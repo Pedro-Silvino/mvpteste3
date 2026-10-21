@@ -1,0 +1,3 @@
+# The agent script is downloaded and verified by SHA-256: never let git change its line endings.
+*.ps1 -text
+apps/web/public/downloads/* -text

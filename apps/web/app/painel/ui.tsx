@@ -89,6 +89,17 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M12 10v5m0 3h.01" strokeLinecap="round" />
     </>
   ),
+  evidence: (
+    <>
+      <path d="M21 12.5l-8.5 8.5a5 5 0 01-7-7L14 5.5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 8.5" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  agent: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" strokeLinecap="round" />
+    </>
+  ),
   check: <path d="M5 12l5 5 9-10" strokeLinecap="round" strokeLinejoin="round" />,
 };
 

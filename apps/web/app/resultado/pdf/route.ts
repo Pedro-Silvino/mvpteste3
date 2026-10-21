@@ -23,15 +23,16 @@ export async function GET(request: Request) {
     .from("reports")
     .select("storage_path, created_at, org_id")
     .eq("org_id", orgId)
-    .eq("kind", "express")
+    .in("kind", ["express", "completo"])
     .order("created_at", { ascending: false })
     .limit(10);
   if (!reports?.length) return back(request, "sem-relatorio");
 
   const { data: org } = await supabase.from("organizations").select("domain, plan").eq("id", orgId).maybeSingle();
   const paid = isPaidPlan(org?.plan);
+  // Paid: the report built from collector data if there is one, else the full express report. Free: the free one.
   const wanted = paid ? "-completo.pdf" : "/express.pdf";
-  const report = reports.find((r) => r.storage_path.endsWith(wanted)) ?? reports[0];
+  const report = (paid ? reports.find((r) => r.storage_path.endsWith("/completo.pdf")) : undefined) ?? reports.find((r) => r.storage_path.endsWith(wanted)) ?? reports[0];
 
   const slug = (org?.domain ?? "empresa").replace(/[^a-z0-9.-]/gi, "").slice(0, 60);
   const day = report.created_at.slice(0, 10);

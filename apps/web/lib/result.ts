@@ -21,7 +21,7 @@ export function countByStatus(rows: { status: string }[]) {
 
 // Every open control with its fix steps. PAID PLANS ONLY: callers must check isPaidPlan() first; the
 // free screens only use countByStatus(). Order matches worker/app/engine/scoring.py: weight desc, severity, id.
-export function openGaps(rows: { control_id: string; status: string }[]) {
+export function openGaps(rows: { control_id: string; status: string; source?: string; divergence?: boolean }[]) {
   const byId = new Map(base12.controles.map((c) => [c.id, c]));
   return rows
     .filter((r) => r.status !== "atende" && byId.has(r.control_id))
@@ -33,6 +33,15 @@ export function openGaps(rows: { control_id: string; status: string }[]) {
     )
     .map((r) => {
       const c = byId.get(r.control_id)!;
-      return { id: c.id, name: c.nome, area: c.area, why: c.por_que, steps: c.ficha, status: r.status };
+      return {
+        id: c.id,
+        name: c.nome,
+        area: c.area,
+        why: c.por_que,
+        steps: c.ficha,
+        status: r.status,
+        source: r.source ?? "questionario",
+        divergence: r.divergence ?? false,
+      };
     });
 }
