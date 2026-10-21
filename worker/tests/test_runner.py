@@ -165,3 +165,50 @@ def test_complete_pdf_failure_keeps_the_free_result_and_retry_does_not_duplicate
     process_one(db)
     assert [r["storage_path"] for r in db.report_rows] == ["o1/a1/express.pdf", "o1/a1/express-completo.pdf"]
     assert db.finished[-1][1] == "ok"
+
+
+class CompletoDb(ProcDb):
+    def __init__(self, job, answers, devices, m365=None):
+        super().__init__(job, answers=answers)
+        self.devices, self.m365 = devices, m365
+        self.kinds = []
+
+    def latest_agent_summaries(self, org_id):
+        return self.devices, self.m365
+
+    def save_report_row(self, **kw):
+        super().save_report_row(**kw)
+        self.kinds.append(kw["kind"])
+
+
+def machine(**kw):
+    base = dict(os_supported=True, last_update_days=5, av_active=True, av_age_days=1, user_is_local_admin=False, is_laptop=False, bitlocker=None)
+    base.update(kw)
+    return {"machine": base}
+
+
+COMPLETO = {"id": "j3", "org_id": "o1", "assessment_id": "a2", "kind": "processar", "attempts": 1, "payload": {"completo": True}}
+
+
+def test_completo_job_combines_answers_with_the_collector_and_flags_divergence(monkeypatch):
+    seen = {}
+    monkeypatch.setattr("app.runner.render_pdf", lambda html, footer=None: seen.setdefault("html", html).encode())
+    answers = {f"C{i:02d}": "sim" for i in range(1, 13)}  # a empresa disse "sim" para tudo
+    db = CompletoDb(COMPLETO, answers, devices=[machine(av_active=False)] * 2)  # mas o coletor viu antivírus desligado
+    assert process_one(db) is True
+    rows = {r["control_id"]: r for r in db.control_rows}
+    assert rows["C04"] == {"control_id": "C04", "status": "nao_atende", "source": "scan", "divergence": True}
+    assert rows["C05"]["source"] == "scan" and rows["C05"]["divergence"] is False
+    assert rows["C01"]["source"] == "questionario"
+    assert db.completed[1] < 100  # a nota caiu por causa do scan
+    assert db.kinds == ["completo"] and db.uploads[0][0] == "o1/a2/completo.pdf"
+    assert "resposta diferente do verificado" in seen["html"] and "Verificado pelo coletor" in seen["html"]
+    assert db.finished == [("j3", "ok", None)]
+
+
+def test_completo_without_collector_data_matches_the_questionnaire(monkeypatch):
+    monkeypatch.setattr("app.runner.render_pdf", lambda html, footer=None: b"%PDF")
+    answers = {f"C{i:02d}": "sim" for i in range(1, 13)}
+    db = CompletoDb(COMPLETO, answers, devices=[])
+    process_one(db)
+    assert db.completed == ("a2", 100) and {r["source"] for r in db.control_rows} == {"questionario"}

@@ -12,13 +12,20 @@ VALUE_BY_STATUS = {"atende": 1.0, "parcial": 0.5, "nao_atende": 0.0, "sem_dado":
 _SEVERITY = {"nao_atende": 0, "sem_dado": 1, "parcial": 2}
 
 
-def compute_control_results(answers: dict[str, str]) -> list[dict]:
-    """Uma linha por controle. Resposta ausente ou não oferecida para aquele controle vira sem_dado."""
+def compute_control_results(answers: dict[str, str], scan_status: dict[str, str] | None = None) -> list[dict]:
+    """Uma linha por controle. Resposta ausente ou não oferecida para aquele controle vira sem_dado.
+    O scan (coletor) manda mais que a resposta: se há status do scan, vale o scan, e a diferença entre o que a
+    empresa respondeu e o que o scan viu fica marcada como divergência ("não sei" nunca é divergência)."""
+    scan_status = scan_status or {}
     rows = []
     for cid, control in CONTROLS.items():
         answer = answers.get(cid)
-        status = STATUS_BY_ANSWER.get(answer, "sem_dado") if answer in control["opcoes"] else "sem_dado"
-        rows.append({"control_id": cid, "status": status, "source": "questionario", "divergence": False})
+        answered = STATUS_BY_ANSWER.get(answer, "sem_dado") if answer in control["opcoes"] else "sem_dado"
+        if cid in scan_status:
+            seen = scan_status[cid]
+            rows.append({"control_id": cid, "status": seen, "source": "scan", "divergence": answered != "sem_dado" and answered != seen})
+        else:
+            rows.append({"control_id": cid, "status": answered, "source": "questionario", "divergence": False})
     return rows
 
 

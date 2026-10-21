@@ -6,6 +6,7 @@ import time
 from datetime import UTC, date, datetime
 from typing import Protocol
 
+from app.engine.mapping import scan_control_status
 from app.engine.scoring import compute_control_results, score
 from app.documents import DOC_FOOTER, build_document_context, render_document_html
 from app.report import build_context, render_html, render_pdf, warm_up
@@ -34,6 +35,7 @@ class Db(Protocol):
     def upload_report(self, path: str, pdf: bytes) -> None: ...
     def save_report_row(self, **kw) -> None: ...
     def has_report(self, assessment_id: str, path: str) -> bool: ...
+    def latest_agent_summaries(self, org_id: str) -> tuple[list[dict], dict | None]: ...
     def org_profile(self, org_id: str) -> dict | None: ...
     def next_document_version(self, org_id: str, kind: str) -> int: ...
     def upload_document(self, path: str, pdf: bytes) -> None: ...
@@ -59,13 +61,28 @@ def _scan_externo(db: Db, job: dict) -> None:
         db.set_external_score(job["assessment_id"], summary["score"])
 
 
-def _publish(db: Db, org_id: str, asmt: str, path: str, pdf: bytes) -> None:
+def _publish(db: Db, org_id: str, asmt: str, path: str, pdf: bytes, kind: str = "express") -> None:
     db.upload_report(path, pdf)
-    db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
+    db.save_report_row(org_id=org_id, assessment_id=asmt, kind=kind, storage_path=path,
                        sha256=hashlib.sha256(pdf).hexdigest())
 
 
+def _processar_completo(db: Db, job: dict) -> None:
+    """Respostas do Express + o que o coletor viu (o scan manda mais que a resposta, divergência marcada)."""
+    org_id, asmt = job["org_id"], job["assessment_id"]
+    devices, m365 = db.latest_agent_summaries(org_id)
+    results = compute_control_results(db.answers(asmt), scan_control_status(devices, m365))
+    external = db.latest_external_summary(org_id)
+    domain = db.org_domain(org_id) or ""
+    pdf = render_pdf(render_html(build_context(domain, results, external, date.today(), completo=True)))
+    db.save_control_results(asmt, results)
+    _publish(db, org_id, asmt, f"{org_id}/{asmt}/completo.pdf", pdf, kind="completo")
+    db.complete_assessment(asmt, score(results))
+
+
 def _processar(db: Db, job: dict) -> None:
+    if (job.get("payload") or {}).get("completo"):
+        return _processar_completo(db, job)
     """Em duas etapas, para a pessoa ver o resultado o mais cedo possível:
     1) nota + PDF grátis -> assessment 'concluido' (a tela de resultado já abre);
     2) PDF completo (lacunas + como resolver) -> aparece no painel logo depois.

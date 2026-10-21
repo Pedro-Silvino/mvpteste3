@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.db import SupabaseDb, load_env
+from app.ingest import router as ingest_router
 from app.runner import run_forever
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Sentinela Worker", lifespan=lifespan)
+
+
+app.include_router(ingest_router)
 
 
 @app.get("/health")

@@ -35,6 +35,7 @@ CHECK_MEANING = {
     ("X06", "ok"): "HSTS ativo: o navegador exige conexão segura com o site.",
     ("X06", "parcial"): "HSTS ausente. É recomendação de boa prática, não uma falha grave.",
 }
+SOURCE_LABEL = {"questionario": "Resposta da empresa", "scan": "Verificado pelo coletor", "revisao": "Revisão da equipe"}
 NO_DATA_MEANING = "Não foi possível verificar, ou não se aplica a este domínio (ex.: domínio sem e-mail ou sem site)."
 
 _env = Environment(
@@ -75,6 +76,8 @@ def build_context(empresa: str, results: list[dict], external: dict | None, toda
                 "area": CONTROLS[r["control_id"]]["area"],
                 "status": r["status"],
                 "rotulo": STATUS_LABEL[r["status"]],
+                "fonte": SOURCE_LABEL.get(r.get("source", "questionario"), "Resposta"),
+                "divergente": bool(r.get("divergence")),
             }
             for r in results
         ]

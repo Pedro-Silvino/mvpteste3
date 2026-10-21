@@ -146,3 +146,85 @@ class SupabaseDb:
 
     def save_document_row(self, **kw) -> None:
         self.client.post("/documents", json=kw).raise_for_status()
+
+    # ---- agente (coletor)
+    def find_agent_token(self, token_hash: str) -> dict | None:
+        r = self.client.get(
+            "/agent_tokens",
+            params={"token_hash": f"eq.{token_hash}", "select": "id,org_id,expires_at,revoked_at", "limit": 1},
+        )
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+
+    def save_agent_result(self, **kw) -> None:
+        kw["collected_at"] = kw["collected_at"].isoformat()
+        self.client.post("/scan_results", json={**kw, "collector_version": kw["collector_version"]}).raise_for_status()
+
+    def touch_agent_token(self, token_id: str) -> None:
+        self.client.patch(
+            "/agent_tokens", params={"id": f"eq.{token_id}"}, json={"last_used_at": datetime.now(UTC).isoformat()}
+        ).raise_for_status()
+
+    def latest_agent_summaries(self, org_id: str) -> tuple[list[dict], dict | None]:
+        """Último resumo de cada máquina (windows) e o último do Microsoft 365."""
+        r = self.client.get(
+            "/scan_results",
+            params={
+                "org_id": f"eq.{org_id}",
+                "module": "in.(windows,m365)",
+                "order": "received_at.desc",
+                "limit": 500,
+                "select": "module,device_ref,summary",
+            },
+        )
+        r.raise_for_status()
+        devices: dict[str, dict] = {}
+        m365 = None
+        for row in r.json():
+            if row["module"] == "windows" and row["device_ref"] and row["device_ref"] not in devices:
+                devices[row["device_ref"]] = row["summary"]
+            elif row["module"] == "m365" and m365 is None:
+                m365 = row["summary"]
+        return list(devices.values()), m365
+
+    def enqueue_completo(self, org_id: str) -> None:
+        """Dados novos do coletor: (re)cria a avaliação 'completo' a partir das respostas do Express e enfileira o cálculo."""
+        r = self.client.get(
+            "/assessments",
+            params={"org_id": f"eq.{org_id}", "kind": "eq.express", "status": "eq.concluido", "order": "created_at.desc", "limit": 1, "select": "id,created_by"},
+        )
+        r.raise_for_status()
+        if not r.json():
+            return  # sem diagnóstico Express concluído não há respostas para combinar com o coletor
+        express = r.json()[0]
+        c = self.client.get(
+            "/assessments",
+            params={"org_id": f"eq.{org_id}", "kind": "eq.completo", "order": "created_at.desc", "limit": 1, "select": "id"},
+        )
+        c.raise_for_status()
+        if c.json():
+            asmt = c.json()[0]["id"]
+            self.client.patch("/assessments", params={"id": f"eq.{asmt}"}, json={"status": "processando"}).raise_for_status()
+        else:
+            created = self.client.post(
+                "/assessments",
+                json={"org_id": org_id, "kind": "completo", "status": "processando", "created_by": express["created_by"]},
+                headers={"Prefer": "return=representation"},
+            )
+            created.raise_for_status()
+            asmt = created.json()[0]["id"]
+            src = self.client.get("/answers", params={"assessment_id": f"eq.{express['id']}", "select": "question_id,value,answered_by"})
+            src.raise_for_status()
+            rows = [{**a, "assessment_id": asmt} for a in src.json()]
+            if rows:
+                self.client.post("/answers", json=rows).raise_for_status()
+        pending = self.client.get(
+            "/jobs",
+            params={"assessment_id": f"eq.{asmt}", "kind": "eq.processar", "status": "in.(pendente,rodando)", "select": "id", "limit": 1},
+        )
+        pending.raise_for_status()
+        if not pending.json():
+            self.client.post(
+                "/jobs", json={"org_id": org_id, "assessment_id": asmt, "kind": "processar", "payload": {"completo": True}}
+            ).raise_for_status()

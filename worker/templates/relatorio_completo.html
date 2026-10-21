@@ -45,9 +45,9 @@
   <div class="p2">
     <h2>Os 12 controles</h2>
     <table>
-      <tr><th>Controle</th><th>Área</th><th>Situação</th></tr>
+      <tr><th>Controle</th><th>Situação</th><th>Fonte</th></tr>
       {% for c in controles %}
-      <tr><td>{{ c.id }} · {{ c.nome }}</td><td>{{ c.area }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td></tr>
+      <tr><td>{{ c.id }} · {{ c.nome }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td><td>{{ c.fonte }}{% if c.divergente %}<br><span class="note-div">resposta diferente do verificado</span>{% endif %}</td></tr>
       {% endfor %}
     </table>
 
