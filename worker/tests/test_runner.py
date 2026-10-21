@@ -212,3 +212,61 @@ def test_completo_without_collector_data_matches_the_questionnaire(monkeypatch):
     db = CompletoDb(COMPLETO, answers, devices=[])
     process_one(db)
     assert db.completed == ("a2", 100) and {r["source"] for r in db.control_rows} == {"questionario"}
+
+
+# ---------------------------------------------------------------- robustez
+def test_final_failure_of_a_processing_job_marks_the_assessment_as_error(monkeypatch):
+    def boom(html, footer=None):
+        raise RuntimeError("chromium missing")
+
+    monkeypatch.setattr("app.runner.render_pdf", boom)
+    db = ProcDb({**PROC, "attempts": MAX_ATTEMPTS})
+    db.marked = []
+    db.mark_assessment_error = lambda asmt: db.marked.append(asmt)
+    process_one(db)
+    assert db.finished[0][1] == "erro" and db.marked == ["a1"]
+
+
+def test_a_retryable_failure_does_not_mark_the_assessment(monkeypatch):
+    def boom(html, footer=None):
+        raise RuntimeError("x")
+
+    monkeypatch.setattr("app.runner.render_pdf", boom)
+    db = ProcDb({**PROC, "attempts": 1})
+    db.marked = []
+    db.mark_assessment_error = lambda asmt: db.marked.append(asmt)
+    process_one(db)
+    assert db.finished[0][1] == "pendente" and db.marked == []
+
+
+def test_invalid_input_error_also_marks_the_assessment(monkeypatch):
+    db = FakeDb({**JOB, "attempts": 1}, domain="10.0.0.1")
+    db.marked = []
+    db.mark_assessment_error = lambda asmt: db.marked.append(asmt)
+    process_one(db)
+    assert db.finished[0][1] == "erro" and db.marked == ["a1"]
+
+
+def test_loop_requeues_stale_jobs_periodically(monkeypatch):
+    from app.runner import run_forever
+
+    class Db2:
+        def __init__(self):
+            self.polls, self.requeues = 0, 0
+
+        def claim_job(self):
+            self.polls += 1
+            if self.polls > 130:
+                raise KeyboardInterrupt
+            return None
+
+        def requeue_stale_jobs(self):
+            self.requeues += 1
+
+    monkeypatch.setattr("app.runner.time.sleep", lambda s: None)
+    db = Db2()
+    try:
+        run_forever(db, idle_seconds=0)
+    except KeyboardInterrupt:
+        pass
+    assert db.requeues >= 2  # na partida e depois de cada bloco de polls

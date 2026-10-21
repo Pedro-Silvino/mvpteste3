@@ -44,12 +44,21 @@ export const getPainel = cache(async () => {
     .maybeSingle();
   const shownId = completo?.id ?? assessment.id;
 
-  const [{ data: report }, { data: answers }, { data: results }, { data: requests }, scan] = await Promise.all([
+  const [{ data: report }, { data: answers }, { data: results }, { data: requests }, scan, { data: alerts }, { data: history }] = await Promise.all([
     supabase.from("reports").select("created_at").eq("assessment_id", assessment.id).eq("kind", "express").limit(1).maybeSingle(),
     supabase.from("answers").select("question_id, value").eq("assessment_id", assessment.id),
     supabase.from("control_results").select("control_id, status, source, divergence").eq("assessment_id", shownId),
     supabase.from("alerts").select("message").eq("org_id", orgId).is("resolved_at", null).like("message", "Pedido de proposta:%").limit(1),
     latestExternalScan(supabase, orgId),
+    supabase
+      .from("alerts")
+      .select("id, severity, message, created_at")
+      .eq("org_id", orgId)
+      .is("resolved_at", null)
+      .not("message", "like", "Pedido de proposta:%")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase.from("reports").select("id, kind, storage_path, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(36),
   ]);
 
   const rows = results ?? [];
@@ -68,6 +77,8 @@ export const getPainel = cache(async () => {
     answers: new Map((answers ?? []).map((a) => [a.question_id, a.value])),
     rows,
     scan,
+    alerts: alerts ?? [],
+    history: history ?? [],
     threats: threatExposure(rows, scan?.checks),
   };
 });

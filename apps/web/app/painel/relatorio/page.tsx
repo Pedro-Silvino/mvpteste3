@@ -13,6 +13,15 @@ const ERRORS: Record<string, string> = {
   "sem-relatorio": "O relatório ainda não está disponível. Aguarde alguns instantes.",
 };
 
+const KIND_LABEL = (kind: string, path: string) =>
+  kind === "mensal"
+    ? "Relatório mensal"
+    : kind === "completo"
+      ? "Diagnóstico completo, com dados do coletor"
+      : path.endsWith("-completo.pdf")
+        ? "Diagnóstico completo (respostas)"
+        : "Diagnóstico gratuito";
+
 export default async function RelatorioPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
   const p = await getPainel();
@@ -79,6 +88,25 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
           </ul>
         </Card>
       </div>
+
+      {p.paid && p.history.length > 0 && (
+        <Card>
+          <h2 className="text-lg font-bold text-n1">Histórico de relatórios</h2>
+          <ul className="mt-3 divide-y divide-line">
+            {p.history.map((h) => (
+              <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <div>
+                  <p className="font-semibold text-n1">{KIND_LABEL(h.kind, h.storage_path)}</p>
+                  <p className="text-xs text-muted">{formatDateTime(h.created_at)}</p>
+                </div>
+                <a href={`/painel/relatorio/arquivo?id=${h.id}`} className="text-xs font-semibold text-teal hover:underline">
+                  Baixar PDF
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {!p.paid && (
         <LockedCard

@@ -2,7 +2,7 @@
 
 import os
 import ssl
-from datetime import datetime, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -302,3 +302,16 @@ class SupabaseDb:
         if u.status_code != 200:
             return None
         return u.json().get("email") or None  # sessão anônima não tem e-mail
+
+    # ---- robustez
+    def mark_assessment_error(self, assessment_id: str) -> None:
+        self.client.patch(
+            "/assessments", params={"id": f"eq.{assessment_id}", "status": "neq.concluido"}, json={"status": "erro"}
+        ).raise_for_status()
+
+    def requeue_stale_jobs(self, older_than_minutes: int = 10) -> None:
+        """Job em 'rodando' há mais de N minutos = o worker caiu. Volta para a fila; se já gastou as 3 tentativas, vira erro."""
+        limit = (datetime.now(UTC) - timedelta(minutes=older_than_minutes)).isoformat()
+        stale = {"status": "eq.rodando", "started_at": f"lt.{limit}"}
+        self.client.patch("/jobs", params={**stale, "attempts": "gte.3"}, json={"status": "erro", "error": "worker_timeout"}).raise_for_status()
+        self.client.patch("/jobs", params={**stale, "attempts": "lt.3"}, json={"status": "pendente"}).raise_for_status()

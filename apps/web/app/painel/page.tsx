@@ -87,6 +87,23 @@ export default async function VisaoGeralPage() {
         </Kpi>
       </div>
 
+      {p.alerts.length > 0 && (
+        <Card className="mb-4 border-amber-200 bg-amber-50/60">
+          <h2 className="text-lg font-bold text-n1">Alertas ({p.alerts.length})</h2>
+          <ul className="mt-3 space-y-2">
+            {p.alerts.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-start gap-2 text-sm">
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.severity === "critico" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>
+                  {a.severity === "critico" ? "Crítico" : a.severity === "atencao" ? "Atenção" : "Aviso"}
+                </span>
+                <span className="min-w-0 flex-1 text-n1">{a.message}</span>
+                <span className="text-xs text-muted">{formatDateTime(a.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between gap-3">

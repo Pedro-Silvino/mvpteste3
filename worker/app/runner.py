@@ -37,6 +37,8 @@ class Db(Protocol):
     def upload_report(self, path: str, pdf: bytes) -> None: ...
     def save_report_row(self, **kw) -> None: ...
     def has_report(self, assessment_id: str, path: str) -> bool: ...
+    def mark_assessment_error(self, assessment_id: str) -> None: ...
+    def requeue_stale_jobs(self) -> None: ...
     def latest_agent_summaries(self, org_id: str) -> tuple[list[dict], dict | None]: ...
     def previous_results(self, org_id: str, current_assessment: str) -> tuple[list[dict], int | None]: ...
     def previous_external_checks(self, org_id: str) -> dict | None: ...
@@ -177,6 +179,15 @@ def _mensal(db: Db, job: dict) -> None:
         send_email(to, "Sentinela: algo piorou na verificação do mês", body)
 
 
+def _fail_assessment(db: Db, job: dict) -> None:
+    """Job desistiu de vez: o diagnóstico vai para 'erro' (a tela deixa de girar e avisa), em vez de ficar 'processando'."""
+    if job.get("assessment_id") and job["kind"] in ("processar", "mensal", "scan_externo"):
+        try:
+            db.mark_assessment_error(job["assessment_id"])
+        except Exception:  # noqa: BLE001
+            log.exception("não consegui marcar o diagnóstico como erro")
+
+
 def process_one(db: Db) -> bool:
     """Processa um job. Devolve False se não havia nenhum pendente."""
     job = db.claim_job()
@@ -197,11 +208,17 @@ def process_one(db: Db) -> bool:
         db.finish_job(job["id"], "ok")
     except ValueError as e:  # entrada inválida: repetir não adianta
         db.finish_job(job["id"], "erro", str(e))
+        _fail_assessment(db, job)
     except Exception:  # noqa: BLE001
         log.exception("job %s failed", job["id"])  # detalhe só no log interno
         status = "erro" if job.get("attempts", 0) >= MAX_ATTEMPTS else "pendente"
         db.finish_job(job["id"], status, "scan_failed")
+        if status == "erro":
+            _fail_assessment(db, job)
     return True
+
+
+STALE_CHECK_EVERY = 60  # polls entre verificações de job travado
 
 
 def run_forever(db: Db, idle_seconds: float = 1.0, warm: bool = False) -> None:
@@ -210,7 +227,14 @@ def run_forever(db: Db, idle_seconds: float = 1.0, warm: bool = False) -> None:
             warm_up()
         except Exception:  # noqa: BLE001 - sem aquecimento o PDF só demora um pouco mais
             log.exception("falha ao aquecer o Chromium")
+    polls = 0
     while True:
+        if polls % STALE_CHECK_EVERY == 0:
+            try:
+                db.requeue_stale_jobs()  # worker que caiu no meio de um job deixa ele em "rodando"
+            except Exception:  # noqa: BLE001
+                log.exception("falha ao recuperar jobs travados")
+        polls += 1
         try:
             worked = process_one(db)
         except Exception:  # noqa: BLE001 - falha de rede/banco não pode matar o loop
