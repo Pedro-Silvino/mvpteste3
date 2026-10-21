@@ -128,3 +128,62 @@ def test_dkim_is_searched_in_parallel_and_stops_being_slow(monkeypatch):
     start = time.time()
     assert ext._dkim_found("exemplo.com.br") is True
     assert time.time() - start < 1.0  # 12 consultas x 0.3 s em série seriam 3,6 s
+
+
+# ---------------------------------------------------------------- SSRF nos redirecionamentos (auditoria S01)
+def _site(monkeypatch, routes: dict[str, tuple[int, dict]]):
+    """Site falso: cada URL devolve (status, cabeçalhos). Registra o que o worker tentou abrir."""
+    import httpx
+
+    import app.scans.external as ext
+
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        status, headers = routes.get(str(request.url), (404, {}))
+        return httpx.Response(status, headers=headers)
+
+    public = {"empresa.com.br", "www.empresa.com.br"}
+    monkeypatch.setattr(ext, "_public_addresses", lambda h: ["8.8.8.8"] if h in public else [])
+    return ext, httpx.MockTransport(handler), seen
+
+
+def test_redirect_to_internal_address_is_not_followed(monkeypatch):
+    for target in [
+        "http://127.0.0.1/",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://intranet.local/",
+        "http://[::1]/",
+    ]:
+        ext, transport, seen = _site(monkeypatch, {"http://empresa.com.br/": (302, {"location": target})})
+        r = ext._http_get("http://empresa.com.br/", max_redirects=3, transport=transport)
+        assert r is None, target
+        assert seen == ["http://empresa.com.br/"], target  # nunca abriu o destino interno
+
+
+def test_redirect_to_other_port_or_scheme_is_not_followed(monkeypatch):
+    for target in ["http://empresa.com.br:6379/", "https://empresa.com.br:8443/", "ftp://empresa.com.br/", "file:///etc/passwd"]:
+        ext, transport, seen = _site(monkeypatch, {"http://empresa.com.br/": (301, {"location": target})})
+        assert ext._http_get("http://empresa.com.br/", max_redirects=3, transport=transport) is None, target
+        assert len(seen) == 1, target
+
+
+def test_internal_start_url_is_never_requested(monkeypatch):
+    ext, transport, seen = _site(monkeypatch, {})
+    assert ext._http_get("http://10.0.0.5/", max_redirects=3, transport=transport) is None
+    assert seen == []
+
+
+def test_public_redirect_chain_is_still_followed(monkeypatch):
+    ext, transport, seen = _site(
+        monkeypatch,
+        {
+            "http://empresa.com.br/": (301, {"location": "http://www.empresa.com.br/"}),
+            "http://www.empresa.com.br/": (301, {"location": "https://www.empresa.com.br/"}),
+            "https://www.empresa.com.br/": (200, {"strict-transport-security": "max-age=1"}),
+        },
+    )
+    r = ext._http_get("http://empresa.com.br/", max_redirects=3, transport=transport)
+    assert r is not None and str(r.url) == "https://www.empresa.com.br/" and r.status_code == 200
+    assert len(seen) == 3

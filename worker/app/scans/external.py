@@ -189,17 +189,37 @@ def _tls_days_left(domain: str, ip: str) -> int | None:
         return None
 
 
-def _http_get(url: str, max_redirects: int = 0) -> httpx.Response | None:
-    """GET sem seguir redirecionamento automático; segue manualmente só até max_redirects saltos."""
+_DEFAULT_PORT = {"http": 80, "https": 443}
+
+
+def _safe_target(url: httpx.URL) -> bool:
+    """Só http/https, só a porta padrão e só host que resolve para IP público (SSRF: o site do cliente não pode
+    mandar o worker para 127.0.0.1, metadados da nuvem ou rede interna por redirecionamento)."""
+    if url.scheme not in _DEFAULT_PORT or not url.host:
+        return False
+    if url.port is not None and url.port != _DEFAULT_PORT[url.scheme]:
+        return False
+    return bool(_public_addresses(url.host))
+
+
+def _http_get(url: str, max_redirects: int = 0, transport: httpx.BaseTransport | None = None) -> httpx.Response | None:
+    """GET sem seguir redirecionamento automático; segue manualmente só até max_redirects saltos, e só para destinos
+    seguros (_safe_target). Destino inseguro = None: não se abre a URL e a checagem vira falha/sem_dado."""
     try:
         with httpx.Client(follow_redirects=False, timeout=TIMEOUT, verify=ssl.create_default_context(),
-                          headers={"User-Agent": "DataDops-Sentinela/1.0"}) as client:
-            r = client.get(url)
+                          headers={"User-Agent": "DataDops-Sentinela/1.0"}, transport=transport) as client:
+            target = httpx.URL(url)
+            if not _safe_target(target):
+                return None
+            r = client.get(target)
             for _ in range(max_redirects):
                 loc = r.headers.get("location")
                 if r.status_code not in (301, 302, 303, 307, 308) or not loc:
                     break
-                r = client.get(str(r.url.join(loc)))
+                target = r.url.join(loc)
+                if not _safe_target(target):
+                    return None
+                r = client.get(target)
             return r
     except httpx.HTTPError:
         return None
