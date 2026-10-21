@@ -14,14 +14,30 @@
     {% endif %}
 
     <div class="next">
+      <h3>Veja na próxima página os riscos a que a empresa está exposta</h3>
+      <p>Mostramos os tipos de ataque, o prejuízo possível e as oportunidades. Quais controles estão em lacuna e como resolver cada um fica nos planos.</p>
+    </div>
+  </div>
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>
+</section>
+
+<section class="page">
+  <div class="p2">
+    <h2>Riscos a que a empresa está exposta</h2>
+    {% for t in ameacas %}
+    <div class="threat">
+      <h3><span>{{ t.nome }}</span><span class="chip lvl-{{ t.cls }}">Exposição {{ t.nivel|lower }}</span></h3>
+      <p><b>Como acontece:</b> {{ t.como_acontece }}</p>
+      <p><b>Prejuízo possível:</b> {{ t.prejuizo }}</p>
+    </div>
+    {% endfor %}
+
+    <h2>O que a empresa ganha ao corrigir</h2>
+    <ul class="opps">{% for o in oportunidades %}<li>{{ o }}</li>{% endfor %}</ul>
+
+    <div class="next">
       <h3>As lacunas e como resolvê-las estão nos planos</h3>
-      <p>Este é o seu retrato gratuito. Ele fica guardado no painel do Sentinela, junto com as suas respostas. Ao escolher um plano você recebe:</p>
-      <ul>
-        <li>Quais controles estão em lacuna, um a um, e o passo a passo para corrigir cada um</li>
-        <li>Kits de documentos (política de segurança, plano de incidente, designação do responsável) e orientações</li>
-        <li>Coletor que confere os computadores da empresa, acompanhamento mensal e alertas quando algo piora</li>
-      </ul>
-      <p>Acesse o painel e escolha o plano. Proposta sob medida para o tamanho da sua empresa.</p>
+      <p>Seu retrato gratuito fica guardado no painel do Sentinela, junto com as suas respostas. Ao escolher um plano você recebe a lista de lacunas com o passo a passo, kits de documentos e orientações, o coletor dos computadores e o acompanhamento mensal. Proposta sob medida para o tamanho da sua empresa.</p>
     </div>
   </div>
   <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>

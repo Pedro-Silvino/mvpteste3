@@ -1,11 +1,12 @@
 """Relatório Express: contexto -> HTML (Jinja, autoescape) -> PDF (Playwright/Chromium)."""
 
+import threading
 from datetime import date
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from app.engine.scoring import CATALOG, CONTROLS, band, score, top_gaps
+from app.engine.scoring import CATALOG, CONTROLS, band, opportunities, score, threat_exposure, top_gaps
 
 FOOTER_REST = (
     "Não substitui análise jurídica nem garante aceitação ou indenização por seguradora. "
@@ -29,6 +30,8 @@ CHECK_MEANING = {
     ("X04", "falha"): "Certificado inválido, vencido, ou o site não responde em HTTPS.",
     ("X05", "ok"): "O endereço sem cadeado (http) leva ao endereço seguro (https).",
     ("X05", "falha"): "O site abre sem cadeado (http), sem redirecionar para o seguro.",
+    ("X05", "sem_dado"): "O site bloqueou a checagem automática; não foi possível verificar.",
+    ("X06", "sem_dado"): "O site bloqueou a checagem automática; não foi possível verificar.",
     ("X06", "ok"): "HSTS ativo: o navegador exige conexão segura com o site.",
     ("X06", "parcial"): "HSTS ausente. É recomendação de boa prática, não uma falha grave.",
 }
@@ -53,6 +56,13 @@ def build_context(empresa: str, results: list[dict], external: dict | None, toda
         "rodape": FOOTER_REST,
         "resumo": {s: sum(1 for r in results if r["status"] == s) for s in ("atende", "parcial", "nao_atende", "sem_dado")},
         "externo": None,
+        # Tipos de ataque a que a empresa está exposta (Alto/Médio/Baixo): vale para os dois PDFs e não revela qual
+        # controle está em lacuna.
+        "ameacas": [
+            {**t, "cls": {"Alto": "alto", "Médio": "medio", "Baixo": "baixo"}.get(t["nivel"], "sem")}
+            for t in threat_exposure(results, external["checks"] if external else None)
+        ],
+        "oportunidades": opportunities(),
     }
     if completo:
         ctx["lacunas"] = [
@@ -90,18 +100,53 @@ def render_html(ctx: dict) -> str:
     return _env.get_template(name).render(**ctx)
 
 
+_state = threading.local()  # navegador mantido aberto só na thread do worker (warm_up)
+
+
+def warm_up() -> None:
+    """Abre o Chromium uma vez e o reaproveita nos próximos PDFs (poupa ~1 s por relatório). Chamar na thread do worker."""
+    from playwright.sync_api import sync_playwright
+
+    if getattr(_state, "browser", None) is None:
+        _state.pw = sync_playwright().start()
+        _state.browser = _state.pw.chromium.launch()
+    render_pdf("<!doctype html><title>aquecimento</title>")  # baixa as fontes e aquece o motor
+
+
+def _reset_browser() -> None:
+    try:
+        _state.browser.close()
+        _state.pw.stop()
+    except Exception:  # noqa: BLE001
+        pass
+    _state.browser = None
+
+
+def _print(browser, html: str) -> bytes:
+    page = browser.new_page()
+    try:
+        page.set_content(html, wait_until="load")
+        try:  # fontes do Google; sem rede cai nas fontes do sistema
+            page.evaluate("document.fonts.ready")
+        except Exception:  # noqa: BLE001
+            pass
+        return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
+    finally:
+        page.close()
+
+
 def render_pdf(html: str) -> bytes:
+    if getattr(_state, "browser", None) is not None:
+        try:
+            return _print(_state.browser, html)
+        except Exception:  # noqa: BLE001 - navegador morreu: recomeça do zero na próxima
+            _reset_browser()
+            raise
     from playwright.sync_api import sync_playwright  # import tardio: só quem gera PDF paga o custo
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
         try:
-            page = browser.new_page()
-            page.set_content(html, wait_until="load")
-            try:  # fontes do Google; sem rede cai nas fontes do sistema
-                page.evaluate("document.fonts.ready", )
-            except Exception:  # noqa: BLE001
-                pass
-            return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
+            return _print(browser, html)
         finally:
             browser.close()

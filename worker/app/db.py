@@ -115,3 +115,11 @@ class SupabaseDb:
 
     def save_report_row(self, **kw) -> None:
         self.client.post("/reports", json=kw).raise_for_status()
+
+    def has_report(self, assessment_id: str, path: str) -> bool:
+        r = self.client.get(
+            "/reports",
+            params={"assessment_id": f"eq.{assessment_id}", "storage_path": f"eq.{path}", "select": "id", "limit": 1},
+        )
+        r.raise_for_status()
+        return bool(r.json())

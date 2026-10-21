@@ -46,9 +46,19 @@ def test_free_html_does_not_reveal_which_controls_or_how_to_fix():
     assert "Retrato do ambiente na data da coleta." in html and FOOTER_REST in html
 
 
-def test_free_pdf_is_one_page():
+def test_free_pdf_is_two_pages():
     pdf = render_pdf(render_html(ctx()))
-    assert pdf.startswith(b"%PDF") and pages(pdf) == 1
+    assert pdf.startswith(b"%PDF") and pages(pdf) == 2
+
+
+def test_free_html_shows_threat_types_losses_and_opportunities_without_naming_controls():
+    c = ctx()
+    assert len(c["ameacas"]) == 5 and len(c["oportunidades"]) == 4
+    html = render_html(c)
+    for t in c["ameacas"]:
+        assert t["nome"] in html and t["prejuizo"] in html
+    assert "Exposição alto" in html or "Exposição médio" in html
+    assert "O que a empresa ganha ao corrigir" in html and c["oportunidades"][0] in html
 
 
 # ---------------------------------------------------------------- plano pago: lacunas e como resolver

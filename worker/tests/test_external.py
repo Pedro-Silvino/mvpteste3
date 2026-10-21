@@ -45,7 +45,13 @@ def test_tls():
 def test_https_redirect():
     assert eval_https_redirect("https://exemplo.com.br/") == "ok"
     assert eval_https_redirect("http://exemplo.com.br/x") == "falha"
-    assert eval_https_redirect(None) == "falha"
+    assert eval_https_redirect(None, None) == "falha"  # porta 80 sem resposta
+
+
+def test_blocked_site_is_no_data_not_failure():
+    for status in (401, 403, 429, 503):
+        assert eval_https_redirect("http://exemplo.com.br/", status) == "sem_dado"
+        assert eval_headers({"server": "waf"}, status) == "sem_dado"
 
 
 def test_headers():
@@ -107,3 +113,18 @@ def test_site_host_none_when_nothing_resolves_publicly(monkeypatch):
 
     monkeypatch.setattr(ext, "_public_addresses", lambda h: [])
     assert ext.pick_site_host("exemplo.com.br") is None
+
+
+def test_dkim_is_searched_in_parallel_and_stops_being_slow(monkeypatch):
+    import time
+
+    import app.scans.external as ext
+
+    def slow(domain, selector, rtype):
+        time.sleep(0.3)
+        return selector == "k1" and rtype == "CNAME"
+
+    monkeypatch.setattr(ext, "_dkim_record_exists", slow)
+    start = time.time()
+    assert ext._dkim_found("exemplo.com.br") is True
+    assert time.time() - start < 1.0  # 12 consultas x 0.3 s em série seriam 3,6 s

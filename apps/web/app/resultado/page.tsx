@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { formatDateTime, latestExternalScan } from "@/lib/assessment-data";
 import { currentOrgId } from "@/lib/org";
 import { bandFor, countByStatus } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
+import { threatExposure } from "@/lib/threats";
+import { ProcessingScreen } from "../_components/processing-screen";
+import { ThreatSection } from "../_components/threat-section";
 import { AutoRefresh } from "./auto-refresh";
 import { DownloadButton } from "./download-button";
 
@@ -21,8 +25,8 @@ const CHIP: Record<string, string> = {
 };
 const CHIP_LABEL = { atende: "atendem", parcial: "parciais", nao_atende: "não atendem", sem_dado: "sem dado" } as const;
 
-// First screen after the questionnaire. Free level on purpose: score and totals only. WHICH controls are
-// open and HOW to fix them live in the dashboard, behind a paid plan (D19).
+// First screen after the questionnaire. Free level on purpose: score, totals and the TYPES of attack the
+// company is exposed to. WHICH controls are open and HOW to fix them live in the dashboard, behind a paid plan.
 export default async function ResultadoPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
   const supabase = await createClient();
@@ -55,30 +59,32 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
   const ready = assessment.status === "concluido" && assessment.score !== null && !!report;
 
   if (!ready) {
+    const failed = assessment.status === "erro";
     return (
       <main className="flex flex-1 items-center justify-center bg-ice px-4 py-12">
-        {assessment.status !== "erro" && <AutoRefresh />}
-        <div className={`${card} w-full max-w-xl text-center`}>
-          {assessment.status !== "erro" && (
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ice border-t-teal" />
-          )}
-          <h1 className="mt-6 text-2xl font-bold text-n1">
-            {assessment.status === "erro" ? "Algo deu errado" : "Montando o seu relatório…"}
-          </h1>
-          <p className="mt-2 text-muted">
-            {assessment.status === "erro"
-              ? "Não conseguimos gerar o relatório. A equipe DataDops já foi avisada; tente de novo em alguns minutos."
-              : "Estamos checando o e-mail e o site e calculando a sua nota. Leva menos de um minuto, não precisa recarregar."}
-          </p>
-        </div>
+        {!failed && <AutoRefresh everyMs={1500} />}
+        {failed ? (
+          <div className={`${card} w-full max-w-xl text-center`}>
+            <h1 className="text-2xl font-bold text-n1">Algo deu errado</h1>
+            <p className="mt-2 text-muted">
+              Não conseguimos gerar o relatório. A equipe DataDops já foi avisada; tente de novo em alguns minutos.
+            </p>
+          </div>
+        ) : (
+          <ProcessingScreen />
+        )}
       </main>
     );
   }
 
   const score = assessment.score as number;
   const band = bandFor(score);
-  const { data: rows } = await supabase.from("control_results").select("status").eq("assessment_id", assessment.id);
+  const [{ data: rows }, scan] = await Promise.all([
+    supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id),
+    latestExternalScan(supabase, orgId),
+  ]);
   const counts = countByStatus(rows ?? []);
+  const threats = threatExposure(rows ?? [], scan?.checks);
 
   return (
     <main className="flex flex-1 justify-center bg-ice px-4 py-8 sm:py-12">
@@ -114,11 +120,18 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
               </span>
             ))}
           </div>
-          {assessment.external_score !== null && (
-            <p className="mt-3 text-xs text-muted">
-              Checagem pública do e-mail e do site: {assessment.external_score}/100 (consultas públicas, não altera a nota).
-            </p>
-          )}
+
+          <p className="mx-auto mt-4 max-w-md rounded-xl bg-ice px-4 py-3 text-xs text-n3">
+            {scan ? (
+              <>
+                <b>Checagem pública feita em {formatDateTime(scan.collectedAt)}</b> em {scan.domain}: e-mail (SPF, DMARC e
+                DKIM), certificado, redirecionamento para HTTPS e cabeçalhos do site
+                {scan.score !== null ? <>. Nota externa: {scan.score}/100 (não altera a nota acima)</> : null}.
+              </>
+            ) : (
+              "A checagem pública deste domínio ainda não foi concluída. O resultado aparece no painel."
+            )}
+          </p>
 
           <DownloadButton />
           {erro && DOWNLOAD_ERRORS[erro] && (
@@ -127,6 +140,8 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
             </p>
           )}
         </section>
+
+        <ThreatSection threats={threats} />
 
         <section className="rounded-3xl bg-n1 p-6 text-white shadow-lg shadow-n3/20 sm:p-9">
           <h2 className="text-2xl font-bold leading-snug">Quais são as lacunas e como resolver?</h2>

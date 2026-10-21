@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime
 from typing import Protocol
 
 from app.engine.scoring import compute_control_results, score
-from app.report import build_context, render_html, render_pdf
+from app.report import build_context, render_html, render_pdf, warm_up
 from app.scans.external import (
     build_summary,
     canonical_sha256,
@@ -32,6 +32,7 @@ class Db(Protocol):
     def complete_assessment(self, assessment_id: str, score: int) -> None: ...
     def upload_report(self, path: str, pdf: bytes) -> None: ...
     def save_report_row(self, **kw) -> None: ...
+    def has_report(self, assessment_id: str, path: str) -> bool: ...
 
 
 def _scan_externo(db: Db, job: dict) -> None:
@@ -53,26 +54,34 @@ def _scan_externo(db: Db, job: dict) -> None:
         db.set_external_score(job["assessment_id"], summary["score"])
 
 
+def _publish(db: Db, org_id: str, asmt: str, path: str, pdf: bytes) -> None:
+    db.upload_report(path, pdf)
+    db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
+                       sha256=hashlib.sha256(pdf).hexdigest())
+
+
 def _processar(db: Db, job: dict) -> None:
+    """Em duas etapas, para a pessoa ver o resultado o mais cedo possível:
+    1) nota + PDF grátis -> assessment 'concluido' (a tela de resultado já abre);
+    2) PDF completo (lacunas + como resolver) -> aparece no painel logo depois.
+    Cada etapa só roda se ainda não foi feita, então uma nova tentativa do job não duplica nada."""
     org_id, asmt = job["org_id"], job["assessment_id"]
     results = compute_control_results(db.answers(asmt))
     external = db.latest_external_summary(org_id)
     domain = db.org_domain(org_id) or ""
-    # Dois PDFs: o grátis (nota e contagem) e o completo (lacunas + como resolver). O site entrega um ou outro
-    # conforme o plano da empresa. Gera os dois antes de gravar qualquer coisa: falhou aqui, nada fica pela metade.
     today = date.today()
-    files = {
-        f"{org_id}/{asmt}/express.pdf": render_pdf(render_html(build_context(domain, results, external, today))),
-        f"{org_id}/{asmt}/express-completo.pdf": render_pdf(
-            render_html(build_context(domain, results, external, today, completo=True))
-        ),
-    }
-    for path, pdf in files.items():
-        db.upload_report(path, pdf)
-        db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
-                           sha256=hashlib.sha256(pdf).hexdigest())
-    db.save_control_results(asmt, results)
-    db.complete_assessment(asmt, score(results))
+    free_path = f"{org_id}/{asmt}/express.pdf"
+    full_path = f"{org_id}/{asmt}/express-completo.pdf"
+
+    if not db.has_report(asmt, free_path):
+        pdf = render_pdf(render_html(build_context(domain, results, external, today)))
+        db.save_control_results(asmt, results)
+        _publish(db, org_id, asmt, free_path, pdf)
+    db.complete_assessment(asmt, score(results))  # libera /resultado
+
+    if not db.has_report(asmt, full_path):
+        pdf = render_pdf(render_html(build_context(domain, results, external, today, completo=True)))
+        _publish(db, org_id, asmt, full_path, pdf)
 
 
 def process_one(db: Db) -> bool:
@@ -98,7 +107,12 @@ def process_one(db: Db) -> bool:
     return True
 
 
-def run_forever(db: Db, idle_seconds: float = 5.0) -> None:
+def run_forever(db: Db, idle_seconds: float = 1.0, warm: bool = False) -> None:
+    if warm:
+        try:
+            warm_up()
+        except Exception:  # noqa: BLE001 - sem aquecimento o PDF só demora um pouco mais
+            log.exception("falha ao aquecer o Chromium")
     while True:
         try:
             worked = process_one(db)

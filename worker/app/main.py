@@ -18,7 +18,7 @@ async def lifespan(_: FastAPI):
     env = load_env()
     # The job loop runs in a background thread; skipped when the service credentials aren't set (e.g. tests).
     if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
-        threading.Thread(target=run_forever, args=(SupabaseDb.from_env(),), daemon=True).start()
+        threading.Thread(target=run_forever, args=(SupabaseDb.from_env(),), kwargs={"warm": True}, daemon=True).start()
         log.info("fila de jobs LIGADA")
     else:
         missing = [k for k in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY") if not os.environ.get(k)]

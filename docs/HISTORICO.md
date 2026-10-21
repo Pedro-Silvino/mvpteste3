@@ -16,6 +16,15 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-21 — Riscos no resultado, scan validado e mais rápido (D21, D22)
+- Feito: `/resultado`, `/painel` e PDF grátis (agora 2 páginas) mostram tipos de ataque, exposição, prejuízo possível e oportunidades. Tela de espera animada (`ProcessingScreen`) e atualização a cada 1,5 s. Prova de que o scan roda: data e hora, domínio e o que foi verificado. Worker: Chromium aquecido e reaproveitado (PDF de 2 s para 0,6 s), fila consultada a cada 1 s, PDF grátis publicado antes do completo (etapas idempotentes).
+- Validação do scan: jobs e `scan_results` reais no banco (prohd.com.br 22 s e datadops.com.br 38 s no worker, nota externa 86 e 58); comparado com `Resolve-DnsName`, `curl` e leitura do certificado: SPF, DMARC, HSTS e validade do certificado batem. Achou um erro: datadops.com.br responde 403 ao cliente Python e o scan dava falha; corrigido (D22). Tempo do scan: 36 s caiu para 3 s (DKIM em série era quase tudo).
+- Arquivos: `docs/BASE12.json` (v1.1.0) e cópias, `worker/app/{scans/external,engine/scoring,report,runner,db,main}.py`, `worker/templates/*`, `apps/web/lib/{threats,assessment-data}.ts`, `apps/web/app/_components/*`, `apps/web/app/{resultado,painel}/page.tsx`.
+- Decisões: D21, D22.
+- Testes: worker pytest 53/53; web Vitest 45/45, lint e typecheck ok. Páginas do PDF conferidas por captura. Não testado no navegador contra o banco.
+- Próximo passo: Pedro aprova a migração `request_plan` e o reprocessamento do diagnóstico de teste (ver mensagem). Depois disso: T07 fechada, tela de dados da empresa, recuperação de job travado.
+- Bloqueios: ok do Pedro.
+
 ## 2026-10-21 — Painel freemium com 4 planos; lacunas só nos planos pagos (D20)
 - Feito: `/resultado` sem lacunas (nota, faixa, contagem, nota externa, baixar PDF, "Abrir meu painel"). `/painel`: relatório guardado + download, respostas, 4 planos (Grátis, Essencial, Dossiê Prova, 360, sem preço), pedido de plano; plano pago mostra lacunas com "como resolver", kits de documentos e coletor (cartões "em preparação": só descrição, o conteúdo vem na T14/T09–T12). Worker gera 2 PDFs (grátis 1 página, completo 3). Download escolhe o PDF pelo plano. Consultas "mais recente" agora amarradas à empresa do usuário (`lib/org.ts`), para não vazar entre empresas quando houver staff.
 - Arquivos: `worker/templates/{_base,_hero,_score,relatorio_gratuito,relatorio_completo}.html`, `worker/app/{report,runner}.py`, `apps/web/app/{painel,resultado,diagnostico}/*`, `apps/web/lib/{plans,org,result}.ts`, `supabase/migrations/20261021120000_request_plan.sql` (NÃO aplicada).

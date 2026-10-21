@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { formatDateTime, latestExternalScan } from "@/lib/assessment-data";
 import { isPaidPlan, planName, type PaidPlanId } from "@/lib/plans";
 import { currentOrgId } from "@/lib/org";
 import { buildSteps } from "@/lib/questionnaire";
 import { bandFor, openGaps, STATUS_LABEL } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
+import { threatExposure } from "@/lib/threats";
+import { ThreatSection } from "../_components/threat-section";
 import { AutoRefresh } from "../resultado/auto-refresh";
 import { DownloadButton } from "../resultado/download-button";
 import { PlanCards } from "./plan-cards";
@@ -51,10 +54,8 @@ export default async function PainelPage() {
   const [{ data: report }, { data: answers }, { data: results }, { data: requests }] = await Promise.all([
     supabase.from("reports").select("created_at").eq("assessment_id", assessment.id).eq("kind", "express").limit(1).maybeSingle(),
     supabase.from("answers").select("question_id, value").eq("assessment_id", assessment.id),
-    // Only read when the plan is paid: the free dashboard never even asks for the per-control results.
-    paid
-      ? supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id)
-      : Promise.resolve({ data: [] as { control_id: string; status: string }[] }),
+    // Feeds the threat overview for everyone; the per-control gaps with fix steps are only built for paid plans.
+    supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id),
     supabase
       .from("alerts")
       .select("message")
@@ -64,6 +65,8 @@ export default async function PainelPage() {
       .limit(1),
   ]);
 
+  const scan = await latestExternalScan(supabase, org.id);
+  const threats = threatExposure(results ?? [], scan?.checks);
   const ready = assessment.status === "concluido" && assessment.score !== null && !!report;
   const band = ready ? bandFor(assessment.score as number) : null;
   const gaps = paid ? openGaps(results ?? []) : [];
@@ -74,7 +77,7 @@ export default async function PainelPage() {
 
   return (
     <main className="flex-1 bg-ice px-4 py-8 sm:py-12">
-      {!ready && assessment.status !== "erro" && <AutoRefresh />}
+      {!ready && assessment.status !== "erro" && <AutoRefresh everyMs={1500} />}
       <div className="mx-auto w-full max-w-3xl space-y-5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -132,6 +135,19 @@ export default async function PainelPage() {
             </p>
           )}
         </section>
+
+        {ready && <ThreatSection threats={threats} />}
+
+        {scan && (
+          <section className={card}>
+            <h2 className="text-xl font-bold text-n1">Checagem pública do domínio</h2>
+            <p className="mt-2 text-sm text-muted">
+              Feita em <b className="text-n1">{formatDateTime(scan.collectedAt)}</b> em {scan.domain}: e-mail (SPF, DMARC e
+              DKIM), certificado, redirecionamento para HTTPS e cabeçalhos do site, só com consultas públicas.
+              {scan.score !== null ? " Nota externa: " + scan.score + "/100." : ""}
+            </p>
+          </section>
+        )}
 
         {paid ? (
           <>

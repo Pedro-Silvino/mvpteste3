@@ -9,12 +9,15 @@ import socket
 import ssl
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 
 import dns.exception
 import dns.resolver
 import httpx
 
-TIMEOUT = 10  # segundos por checagem
+TIMEOUT = 10  # segundos por checagem (TLS e HTTP)
+DNS_TIMEOUT = 3  # consulta DNS: responde rápido ou não responde
+BLOCKED_STATUS = (401, 403, 429, 503)  # o site recusou a checagem automática: não prova nada
 DKIM_SELECTORS = ["selector1", "selector2", "google", "default", "k1", "s1"]
 WEIGHTS = {"X01": 1, "X02": 2, "X03": 1, "X04": 1, "X05": 1, "X06": 1}
 VALUE = {"ok": 1.0, "parcial": 0.5, "falha": 0.0}  # sem_dado fica fora do cálculo
@@ -53,11 +56,15 @@ def eval_tls(days_left: int | None) -> str:
     return "ok" if days_left > 15 else "parcial"
 
 
-def eval_https_redirect(final_url: str | None) -> str:
+def eval_https_redirect(final_url: str | None, status: int | None = 200) -> str:
+    if status in BLOCKED_STATUS:
+        return "sem_dado"  # WAF/bloqueio: não dá para afirmar nem que redireciona nem que não
     return "ok" if final_url and final_url.lower().startswith("https://") else "falha"
 
 
-def eval_headers(headers: dict[str, str]) -> str:
+def eval_headers(headers: dict[str, str], status: int | None = 200) -> str:
+    if status in BLOCKED_STATUS:
+        return "sem_dado"  # os cabeçalhos de uma página de bloqueio não são os do site
     return "ok" if any(k.lower() == "strict-transport-security" for k in headers) else "parcial"
 
 
@@ -104,8 +111,8 @@ def is_public_ip(ip: str) -> bool:
 
 def _resolver() -> dns.resolver.Resolver:
     r = dns.resolver.Resolver()
-    r.lifetime = TIMEOUT
-    r.timeout = TIMEOUT
+    r.lifetime = DNS_TIMEOUT
+    r.timeout = DNS_TIMEOUT
     return r
 
 
@@ -125,16 +132,18 @@ def _has_mx(domain: str) -> bool:
         return False
 
 
+def _dkim_record_exists(domain: str, selector: str, rtype: str) -> bool:
+    try:
+        _resolver().resolve(f"{selector}._domainkey.{domain}", rtype)
+        return True
+    except (dns.exception.DNSException, OSError):
+        return False
+
+
 def _dkim_found(domain: str) -> bool:
-    r = _resolver()
-    for sel in DKIM_SELECTORS:
-        for rtype in ("TXT", "CNAME"):
-            try:
-                r.resolve(f"{sel}._domainkey.{domain}", rtype)
-                return True
-            except (dns.exception.DNSException, OSError):
-                continue
-    return False
+    pairs = [(sel, rtype) for sel in DKIM_SELECTORS for rtype in ("TXT", "CNAME")]
+    with ThreadPoolExecutor(max_workers=len(pairs)) as pool:
+        return any(pool.map(lambda p: _dkim_record_exists(domain, p[0], p[1]), pairs))
 
 
 def _public_addresses(host: str) -> list[str]:
@@ -197,7 +206,8 @@ def _http_get(url: str, max_redirects: int = 0) -> httpx.Response | None:
 
 
 def run_external_scan(domain: str) -> dict[str, str]:
-    """Roda X01-X06 e devolve {id: ok|parcial|falha|sem_dado}. Cada checagem isolada: uma falha não derruba as outras."""
+    """Roda X01-X06 e devolve {id: ok|parcial|falha|sem_dado}. As checagens de e-mail e do site andam em paralelo,
+    e cada uma é isolada: uma falha vira sem_dado e não derruba as outras."""
     checks: dict[str, str] = {}
 
     def safe(cid: str, fn: Callable[[], str]) -> None:
@@ -206,32 +216,47 @@ def run_external_scan(domain: str) -> dict[str, str]:
         except Exception:  # noqa: BLE001 - checagem quebrada vira sem_dado, nunca derruba o scan
             checks[cid] = "sem_dado"
 
-    if _has_mx(domain):
-        safe("X01", lambda: eval_spf(_txt(domain)))
-        safe("X02", lambda: eval_dmarc(_txt(f"_dmarc.{domain}")))
-        safe("X03", lambda: eval_dkim(_dkim_found(domain)))
-    else:  # domínio que não recebe e-mail: SPF/DMARC/DKIM não se aplicam, não é falha
-        for cid in ("X01", "X02", "X03"):
-            checks[cid] = "sem_dado"
+    def email_checks() -> None:
+        if not _has_mx(domain):  # domínio que não recebe e-mail: SPF/DMARC/DKIM não se aplicam, não é falha
+            for cid in ("X01", "X02", "X03"):
+                checks[cid] = "sem_dado"
+            return
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            jobs = [
+                pool.submit(safe, "X01", lambda: eval_spf(_txt(domain))),
+                pool.submit(safe, "X02", lambda: eval_dmarc(_txt(f"_dmarc.{domain}"))),
+                pool.submit(safe, "X03", lambda: eval_dkim(_dkim_found(domain))),
+            ]
+            for j in jobs:
+                j.result()
 
-    site = pick_site_host(domain)
-    if site is None:
-        for cid in ("X04", "X05", "X06"):
-            checks[cid] = "sem_dado"
-        return checks
-    host, ip = site
+    def site_checks() -> None:
+        site = pick_site_host(domain)
+        if site is None:
+            for cid in ("X04", "X05", "X06"):
+                checks[cid] = "sem_dado"
+            return
+        host, ip = site
 
-    safe("X04", lambda: eval_tls(_tls_days_left(host, ip)))
+        def x05() -> str:
+            # http:// deve acabar em https:// (aceita saltos, ex.: http://x -> http://www.x -> https://www.x)
+            r = _http_get(f"http://{host}/", max_redirects=3)
+            return eval_https_redirect(str(r.url) if r else None, r.status_code if r else None)
 
-    def x05() -> str:
-        # http:// deve acabar em https:// (aceita saltos, ex.: http://x -> http://www.x -> https://www.x)
-        r = _http_get(f"http://{host}/", max_redirects=3)
-        return eval_https_redirect(str(r.url) if r else None)
+        def x06() -> str:
+            r = _http_get(f"https://{host}/", max_redirects=3)
+            return "sem_dado" if r is None else eval_headers(dict(r.headers), r.status_code)
 
-    def x06() -> str:
-        r = _http_get(f"https://{host}/", max_redirects=3)
-        return "sem_dado" if r is None else eval_headers(dict(r.headers))
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            jobs = [
+                pool.submit(safe, "X04", lambda: eval_tls(_tls_days_left(host, ip))),
+                pool.submit(safe, "X05", x05),
+                pool.submit(safe, "X06", x06),
+            ]
+            for j in jobs:
+                j.result()
 
-    safe("X05", x05)
-    safe("X06", x06)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        for f in [pool.submit(email_checks), pool.submit(site_checks)]:
+            f.result()
     return checks

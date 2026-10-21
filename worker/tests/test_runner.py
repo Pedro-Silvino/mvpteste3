@@ -81,6 +81,7 @@ class ProcDb(FakeDb):
         self.completed = None
         self.uploads = []
         self.report_rows = []
+        self.events = []
 
     def answers(self, assessment_id):
         return self._answers
@@ -93,9 +94,14 @@ class ProcDb(FakeDb):
 
     def complete_assessment(self, assessment_id, score):
         self.completed = (assessment_id, score)
+        self.events.append("complete")
 
     def upload_report(self, path, pdf):
         self.uploads.append((path, pdf))
+        self.events.append(path.rsplit("/", 1)[1])
+
+    def has_report(self, assessment_id, path):
+        return any(r["storage_path"] == path for r in self.report_rows)
 
     def save_report_row(self, **kw):
         self.report_rows.append(kw)
@@ -130,3 +136,32 @@ def test_processar_failure_does_not_mark_assessment_complete(monkeypatch):
     process_one(db)
     assert db.report_rows == []
     assert db.finished[0][1] == "pendente"
+
+
+def test_free_result_is_released_before_the_complete_pdf_is_built(monkeypatch):
+    monkeypatch.setattr("app.runner.render_pdf", lambda html: b"%PDF-fake")
+    db = ProcDb(PROC)
+    process_one(db)
+    assert db.events == ["express.pdf", "complete", "express-completo.pdf"]
+
+
+def test_complete_pdf_failure_keeps_the_free_result_and_retry_does_not_duplicate(monkeypatch):
+    calls = {"n": 0}
+
+    def flaky(html):
+        calls["n"] += 1
+        if calls["n"] == 2:  # the complete PDF
+            raise RuntimeError("chromium crashed")
+        return b"%PDF-fake"
+
+    monkeypatch.setattr("app.runner.render_pdf", flaky)
+    db = ProcDb({**PROC, "attempts": 1})
+    process_one(db)
+    assert db.completed == ("a1", 100)  # free result already out
+    assert [r["storage_path"] for r in db.report_rows] == ["o1/a1/express.pdf"]
+    assert db.finished[0][1] == "pendente"
+
+    db.job = {**PROC, "attempts": 2}
+    process_one(db)
+    assert [r["storage_path"] for r in db.report_rows] == ["o1/a1/express.pdf", "o1/a1/express-completo.pdf"]
+    assert db.finished[-1][1] == "ok"
