@@ -39,6 +39,7 @@ def client():
     import app.ingest as ingest
 
     ingest.limiter = RateLimiter(max_events=10, window_seconds=3600)
+    ingest.auth_failures = RateLimiter(max_events=ingest.AUTH_FAILURES_PER_WINDOW, window_seconds=600)
     yield TestClient(app), db
     app.dependency_overrides.clear()
 
@@ -162,3 +163,58 @@ def test_rate_limiter_window():
     assert lim.allow("b")
     now[0] += 61
     assert lim.allow("a")
+
+
+# ---------------------------------------------------------------- abuso sem token válido (auditoria S02/S03)
+def test_declared_oversized_body_is_refused_before_reading_or_touching_the_database(client):
+    c, db = client
+    r = c.post(
+        "/ingest",
+        content=b"{}",
+        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json", "Content-Length": str(50 * 1024 * 1024)},
+    )
+    assert r.status_code == 413
+    assert db.lookups == []
+
+
+def test_streamed_oversized_body_is_refused(client):
+    c, db = client
+
+    def chunks():
+        for _ in range(8):
+            yield b"x" * (64 * 1024)
+
+    r = c.post("/ingest", content=chunks(), headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"})
+    assert r.status_code == 413
+    assert db.lookups == [] and db.saved == []
+
+
+def test_repeated_invalid_tokens_are_throttled_before_the_database(client):
+    import app.ingest as ingest
+
+    c, db = client
+    db.token = {}  # nenhum token com esse hash
+    codes = [post(c, windows_body()).status_code for _ in range(ingest.AUTH_FAILURES_PER_WINDOW + 5)]
+    assert codes[: ingest.AUTH_FAILURES_PER_WINDOW] == [401] * ingest.AUTH_FAILURES_PER_WINDOW
+    assert set(codes[ingest.AUTH_FAILURES_PER_WINDOW :]) == {429}
+    assert len(db.lookups) == ingest.AUTH_FAILURES_PER_WINDOW  # depois do limite o banco não é mais consultado
+
+
+def test_failed_auth_limit_uses_the_address_added_by_the_proxy(client):
+    import app.ingest as ingest
+
+    c, db = client
+    db.token = {}
+    for _ in range(ingest.AUTH_FAILURES_PER_WINDOW):
+        post_from(c, "203.0.113.9, 198.51.100.1")
+    # o primeiro valor do X-Forwarded-For vem de quem chama (forjável); o último é o que o proxy viu
+    assert post_from(c, "1.2.3.4, 198.51.100.1").status_code == 429
+    assert post_from(c, "203.0.113.9, 198.51.100.2").status_code == 401
+
+
+def post_from(c, forwarded_for):
+    return c.post(
+        "/ingest",
+        content=json.dumps(windows_body()),
+        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json", "X-Forwarded-For": forwarded_for},
+    )
