@@ -31,7 +31,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - Ao fim chama `submit_assessment`.
   - Aceite: funciona no celular (375 px); respostas salvas a cada tela (sair e voltar não perde).
 
-- [~] **T05 Worker + scan externo** — código e testes prontos; falta rodar o worker com SUPABASE_URL/SERVICE_ROLE_KEY e ver o scan_result gravado
+- [x] **T05 Worker + scan externo** — verificado no banco real em 2026-10-21 (scan_results gravado, external_score = 58)
   - FastAPI com loop que pega `jobs` pendentes (`for update skip locked`), máx. 3 tentativas.
   - `app/scans/external.py`: checagens X01–X06 do BASE12.json. Só consultas públicas. Timeout de 10 s por checagem.
   - Grava `scan_results` (module `externo`, summary, sha256 do JSON canônico) e `assessments.external_score`.

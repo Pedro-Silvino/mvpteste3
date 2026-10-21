@@ -9,6 +9,7 @@ from app.db import SupabaseDb, load_env
 from app.runner import run_forever
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)  # one INFO line per poll is noise
 log = logging.getLogger("sentinela.worker")
 
 

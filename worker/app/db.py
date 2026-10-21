@@ -1,6 +1,7 @@
 """Acesso ao Supabase pelo worker (service role, só no servidor) via PostgREST."""
 
 import os
+import ssl
 from datetime import datetime, UTC
 from pathlib import Path
 
@@ -26,9 +27,11 @@ def load_env(path: Path = Path(__file__).resolve().parent.parent / ".env") -> di
 
 class SupabaseDb:
     def __init__(self, url: str, service_key: str):
+        # System trust store (Windows/corporate proxies), not only the bundled certifi list.
+        tls = ssl.create_default_context()
         headers = {"apikey": service_key, "Authorization": f"Bearer {service_key}"}
-        self.client = httpx.Client(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=20)
-        self.storage = httpx.Client(base_url=f"{url.rstrip('/')}/storage/v1", headers=headers, timeout=60)
+        self.client = httpx.Client(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=20, verify=tls)
+        self.storage = httpx.Client(base_url=f"{url.rstrip('/')}/storage/v1", headers=headers, timeout=60, verify=tls)
 
     @classmethod
     def from_env(cls) -> "SupabaseDb":
