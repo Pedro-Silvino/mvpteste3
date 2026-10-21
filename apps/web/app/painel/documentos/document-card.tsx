@@ -5,9 +5,6 @@ import { requestDocument, approveDocument, type DocState } from "./actions";
 
 type Doc = { id: string; version: number; approved_at: string | null; created_at: string };
 
-const input =
-  "mt-1 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20";
-
 export function DocumentCard({
   orgId,
   kind,
@@ -44,13 +41,13 @@ export function DocumentCard({
             {latest.approved_at ? "Aprovada" : "Aguardando a sua aprovação"}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <a href={`/painel/documentos/arquivo?id=${latest.id}`} className="rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-white hover:bg-n3">
+            <a href={`/painel/documentos/arquivo?id=${latest.id}`} className="btn-primary min-h-9 px-3 py-1.5 text-xs">
               Baixar PDF
             </a>
             {!latest.approved_at && (
               <form action={approveDocument}>
                 <input type="hidden" name="documentId" value={latest.id} />
-                <button className="rounded-lg border border-teal px-3 py-1.5 text-xs font-semibold text-teal hover:bg-ice">Aprovar</button>
+                <button className="rounded-lg border border-teal px-3 py-1.5 text-xs font-semibold text-teal-strong hover:bg-ice">Aprovar</button>
               </form>
             )}
           </div>
@@ -61,12 +58,12 @@ export function DocumentCard({
         {needsResponsible && (
           <div>
             <label className="block text-xs font-semibold text-n1" htmlFor={`resp-${kind}`}>Nome do responsável</label>
-            <input id={`resp-${kind}`} name="responsavel" maxLength={120} required placeholder="Ex.: Maria Souza" className={input} />
+            <input id={`resp-${kind}`} name="responsavel" maxLength={120} required placeholder="Ex.: Maria Souza" className="field text-sm" />
           </div>
         )}
         <button
           disabled={busy}
-          className="w-full rounded-xl bg-n3 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-n1 disabled:opacity-60"
+          className="btn-dark w-full"
         >
           {busy ? "Gerando…" : latest ? "Gerar nova versão" : "Gerar documento"}
         </button>

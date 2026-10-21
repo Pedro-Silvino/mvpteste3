@@ -13,7 +13,7 @@ export default async function PainelLayout({ children }: { children: ReactNode }
   // Right after the questionnaire the report is still being built: show the animation and refresh until ready.
   if (!p.ready) {
     return (
-      <main className="flex flex-1 items-center justify-center bg-[#F2F7FA] px-4 py-12">
+      <main className="flex flex-1 items-center justify-center bg-surface px-4 py-12">
         {!p.failed && <AutoRefresh everyMs={1500} />}
         {p.failed ? (
           <div className="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-lg shadow-n3/10">
@@ -30,10 +30,10 @@ export default async function PainelLayout({ children }: { children: ReactNode }
   }
 
   return (
-    <div className="flex flex-1 bg-[#F2F7FA] lg:min-h-screen">
+    <div className="flex flex-1 bg-surface lg:min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-n1 p-5 text-white lg:flex">
         <div>
-          <p className="font-[family-name:var(--font-archivo)] text-lg font-extrabold tracking-wide">SENTINELA</p>
+          <p className="font-display text-lg font-extrabold tracking-wide">SENTINELA</p>
           <p className="text-xs text-sky">by DataDops</p>
         </div>
         <SidebarNav variant="side" />
@@ -45,7 +45,7 @@ export default async function PainelLayout({ children }: { children: ReactNode }
             <p className="text-sm font-semibold text-sky">{planName(p.org.plan)}</p>
           </div>
           {p.user.anonymous && (
-            <a href="/conta" className="block rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-semibold transition hover:bg-sky hover:text-n1">
+            <a href="/conta" className="btn-primary w-full hover:bg-sky hover:text-n1">
               Salvar minha conta
             </a>
           )}
@@ -53,10 +53,10 @@ export default async function PainelLayout({ children }: { children: ReactNode }
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-10 border-b border-line bg-[#F2F7FA]/90 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-10 border-b border-line bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="font-[family-name:var(--font-archivo)] text-base font-extrabold tracking-wide text-n1">SENTINELA</p>
+              <p className="font-display text-base font-extrabold tracking-wide text-n1">SENTINELA</p>
               <p className="max-w-[12rem] truncate text-xs text-muted">{p.org.domain ?? p.org.name}</p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-n3 shadow-sm">{planName(p.org.plan)}</span>

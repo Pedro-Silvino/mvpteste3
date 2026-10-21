@@ -3,9 +3,6 @@
 import { useActionState, useState } from "react";
 import { createToken, type TokenState } from "./actions";
 
-const input =
-  "mt-1 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20";
-
 export function TokenForm({ orgId, ingestUrl }: { orgId: string; ingestUrl: string }) {
   const [state, action, pending] = useActionState<TokenState, FormData>(createToken.bind(null, orgId), {});
   const [copied, setCopied] = useState(false);
@@ -28,9 +25,9 @@ export function TokenForm({ orgId, ingestUrl }: { orgId: string; ingestUrl: stri
       <form action={action} className="flex flex-wrap items-end gap-3">
         <div className="min-w-[14rem] flex-1">
           <label htmlFor="label" className="block text-sm font-semibold text-n1">Nome do token</label>
-          <input id="label" name="label" required maxLength={60} placeholder="Ex.: TI matriz" className={input} />
+          <input id="label" name="label" required maxLength={60} placeholder="Ex.: TI matriz" className="field text-sm" />
         </div>
-        <button disabled={pending} className="rounded-xl bg-teal px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-n3 disabled:opacity-60">
+        <button disabled={pending} className="btn-primary px-6">
           {pending ? "Gerando…" : "Gerar token"}
         </button>
       </form>
@@ -40,7 +37,7 @@ export function TokenForm({ orgId, ingestUrl }: { orgId: string; ingestUrl: stri
           <p className="text-sm font-semibold text-amber-900">Copie agora: este token não aparece de novo.</p>
           <p className="mt-1 text-xs text-amber-900">O Sentinela guarda só um código de verificação dele, nunca o token. Se perder, gere outro.</p>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-n1 p-3 text-xs leading-relaxed text-ice">{command}</pre>
-          <button type="button" onClick={copy} className="mt-3 rounded-lg bg-n3 px-4 py-2 text-xs font-semibold text-white hover:bg-n1">
+          <button type="button" onClick={copy} className="btn-dark mt-3">
             {copied ? "Copiado" : "Copiar comando"}
           </button>
         </div>

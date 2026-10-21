@@ -68,19 +68,19 @@ export default async function VisaoGeralPage() {
           </div>
         </Kpi>
         <Kpi label="Exposição a ataques" hint="Dos 5 tipos de ataque analisados">
-          <p className="font-[family-name:var(--font-archivo)] text-4xl font-extrabold text-n1">
+          <p className="font-display text-4xl font-extrabold text-n1">
             {high}
             <span className="ml-1 text-base font-semibold text-muted">em nível alto</span>
           </p>
         </Kpi>
         <Kpi label="Checagem pública" hint={p.scan ? `Feita em ${formatDateTime(p.scan.collectedAt)}` : "Ainda não concluída"}>
-          <p className="font-[family-name:var(--font-archivo)] text-4xl font-extrabold text-n1">
+          <p className="font-display text-4xl font-extrabold text-n1">
             {p.scan?.score ?? "—"}
             {p.scan?.score != null && <span className="ml-1 text-base font-semibold text-muted">/100</span>}
           </p>
         </Kpi>
         <Kpi label="Seu plano" hint={p.paid ? "Acesso completo liberado" : "Relatório gratuito guardado"}>
-          <p className="font-[family-name:var(--font-archivo)] text-2xl font-extrabold text-n1">{planName(p.org.plan)}</p>
+          <p className="font-display text-2xl font-extrabold text-n1">{planName(p.org.plan)}</p>
           {p.requestedPlan && (
             <span className="mt-1 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">Pedido enviado</span>
           )}
@@ -108,7 +108,7 @@ export default async function VisaoGeralPage() {
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-n1">Riscos a que a empresa está exposta</h2>
-            <Link href="/painel/riscos" className="text-sm font-semibold text-teal hover:underline">
+            <Link href="/painel/riscos" className="text-sm font-semibold text-teal-strong hover:underline">
               Ver detalhes
             </Link>
           </div>
@@ -142,13 +142,13 @@ export default async function VisaoGeralPage() {
                 <Link href={s.href} className="group flex gap-3">
                   <span
                     className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                      s.done ? "bg-teal text-white" : s.locked ? "bg-line text-muted" : "bg-ice text-teal"
+                      s.done ? "bg-teal-strong text-white" : s.locked ? "bg-line text-muted" : "bg-ice text-teal-strong"
                     }`}
                   >
                     {s.done ? <Icon name="check" className="h-3.5 w-3.5" /> : i + 1}
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-n1 group-hover:text-teal">{s.title}</span>
+                    <span className="block text-sm font-semibold text-n1 group-hover:text-teal-strong">{s.title}</span>
                     <span className="block text-xs text-muted">{s.text}</span>
                   </span>
                 </Link>
@@ -171,7 +171,7 @@ export default async function VisaoGeralPage() {
             </div>
             <Link
               href="/painel/planos"
-              className="rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sky hover:text-n1"
+              className="btn-primary px-6 hover:bg-sky hover:text-n1"
             >
               Escolher um plano
             </Link>

@@ -10,7 +10,7 @@ import { requireStaff } from "@/lib/staff";
 import { Card, CHIP, PageHeader } from "../../../painel/ui";
 import { resolveAlert, reviewControl, setPlan } from "../../actions";
 
-const field = "rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-teal";
+const field = "field mt-0 px-3 py-2 text-sm";
 
 export default async function StaffOrgPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,7 +47,7 @@ export default async function StaffOrgPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <p className="mb-2 text-sm">
-        <Link href="/staff" className="font-semibold text-teal hover:underline">← Voltar</Link>
+        <Link href="/staff" className="font-semibold text-teal-strong hover:underline">← Voltar</Link>
       </p>
       <PageHeader title={org.domain ?? org.name} subtitle={`${org.name} · cadastrada em ${formatDateTime(org.created_at)}`} />
 
@@ -69,12 +69,12 @@ export default async function StaffOrgPage({ params }: { params: Promise<{ id: s
           <h2 className="text-lg font-bold text-n1">Plano</h2>
           <form action={setPlan} className="mt-3 space-y-3">
             <input type="hidden" name="orgId" value={org.id} />
-            <select name="plan" defaultValue={org.plan} className={`${field} w-full`}>
+            <select name="plan" aria-label="Plano da empresa" defaultValue={org.plan} className={`${field} w-full`}>
               {PLANS.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            <button className="w-full rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-white hover:bg-n3">Ativar plano</button>
+            <button className="btn-primary w-full">Ativar plano</button>
             <p className="text-xs text-muted">Resolve o pedido de proposta aberto e registra na auditoria.</p>
           </form>
         </Card>
@@ -90,7 +90,7 @@ export default async function StaffOrgPage({ params }: { params: Promise<{ id: s
                   <p className="text-n1">{a.message}</p>
                   <form action={resolveAlert} className="mt-1">
                     <input type="hidden" name="alertId" value={a.id} />
-                    <button className="text-xs font-semibold text-teal hover:underline">Marcar como resolvido</button>
+                    <button className="text-xs font-semibold text-teal-strong hover:underline">Marcar como resolvido</button>
                   </form>
                 </li>
               ))}
@@ -118,12 +118,12 @@ export default async function StaffOrgPage({ params }: { params: Promise<{ id: s
                     </p>
                   </div>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${CHIP[r.status]}`}>{STATUS_LABEL[r.status]}</span>
-                  <select name="status" defaultValue={r.status} className={field}>
+                  <select name="status" aria-label={`Situação de ${r.control_id}`} defaultValue={r.status} className={`${field} w-auto`}>
                     {Object.entries(STATUS_LABEL).map(([v, l]) => (
                       <option key={v} value={v}>{l}</option>
                     ))}
                   </select>
-                  <input name="note" defaultValue={r.note ?? ""} maxLength={500} placeholder="Observação" className={`${field} w-48`} />
+                  <input name="note" aria-label={`Observação sobre ${r.control_id}`} defaultValue={r.note ?? ""} maxLength={500} placeholder="Observação" className={`${field} w-48`} />
                   <button className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-n3 hover:bg-ice">Salvar</button>
                 </form>
               );

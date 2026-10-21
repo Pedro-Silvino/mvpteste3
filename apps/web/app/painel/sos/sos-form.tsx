@@ -18,7 +18,7 @@ export function SosForm({ orgId }: { orgId: string }) {
         maxLength={2000}
         rows={4}
         placeholder="Ex.: o computador do financeiro mostra uma tela pedindo resgate."
-        className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-ink outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
+        className="field mt-0 py-3 focus:border-red-400"
       />
       <p className="text-xs text-muted">Não escreva senhas nem dados de clientes. A equipe pede o que precisar depois.</p>
       {state.error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{state.error}</p>}

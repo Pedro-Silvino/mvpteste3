@@ -10,14 +10,14 @@ export default function Home() {
         </h1>
         <p className="max-w-xl text-lg text-ice">
           12 perguntas em linguagem simples e uma checagem automática do seu site e do seu e-mail.
-          Você recebe uma nota de maturidade e um plano do que corrigir primeiro.
+          Você recebe uma nota de maturidade e vê a quais tipos de ataque a empresa está exposta.
         </p>
-        <div>
-          <Link
-            href="/entrar"
-            className="inline-block rounded-lg bg-teal px-6 py-3 font-semibold text-white hover:bg-sky hover:text-n1"
-          >
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+          <Link href="/comecar" className="btn-primary px-6 text-base hover:bg-sky hover:text-n1">
             Fazer o diagnóstico gratuito
+          </Link>
+          <Link href="/entrar" className="font-semibold text-sky hover:underline">
+            Já tenho conta
           </Link>
         </div>
       </div>

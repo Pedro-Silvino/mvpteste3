@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 
-export const fieldClass =
-  "mt-1 w-full rounded-lg border border-line px-3 py-2 text-ink focus:border-teal focus:outline-none";
-export const buttonClass =
-  "mt-6 w-full rounded-lg bg-teal px-4 py-3 font-semibold text-white hover:bg-n3 disabled:opacity-60";
+// Shared look for the auth forms (same classes as the rest of the portal, see globals.css).
+export const fieldClass = "field";
+export const buttonClass = "btn-primary mt-6 w-full text-base";
 
 type Props = {
   id: string;
@@ -18,6 +17,7 @@ type Props = {
 
 export function PasswordField({ id, value, onChange, autoComplete, label = "Senha", hint }: Props) {
   const [visible, setVisible] = useState(false);
+  const hintId = hint ? `${id}-hint` : undefined;
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-n1">
@@ -31,18 +31,23 @@ export function PasswordField({ id, value, onChange, autoComplete, label = "Senh
           required
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-describedby={hintId}
           className={`${fieldClass} pr-20`}
         />
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          className="absolute inset-y-0 right-0 mt-1 px-3 text-sm text-teal hover:underline"
+          className="absolute inset-y-0 right-0 mt-1 px-3 text-sm font-semibold text-teal-strong hover:underline"
           aria-label={visible ? "Esconder senha" : "Mostrar senha"}
         >
           {visible ? "Esconder" : "Mostrar"}
         </button>
       </div>
-      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+      {hint && (
+        <p id={hintId} className="mt-1 text-xs text-muted">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

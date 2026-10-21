@@ -49,7 +49,7 @@ export default async function AgentePage() {
 
         <Card>
           <h2 className="text-lg font-bold text-n1">Máquinas que já enviaram</h2>
-          <p className="mt-2 font-[family-name:var(--font-archivo)] text-4xl font-extrabold text-n1">{devices.size}</p>
+          <p className="mt-2 font-display text-4xl font-extrabold text-n1">{devices.size}</p>
           <p className="mt-1 text-xs text-muted">
             {devices.size ? `Último envio em ${formatDateTime([...devices.values()].sort().at(-1)!)}.` : "Nenhum envio ainda."}
           </p>
@@ -60,7 +60,7 @@ export default async function AgentePage() {
         <h2 className="text-lg font-bold text-n1">2. Baixar o coletor</h2>
         <p className="mt-1 text-sm text-muted">Versão {AGENT_VERSION}. Confira o código de verificação antes de rodar.</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <a href="/downloads/sentinela-agent.ps1" download className="rounded-xl bg-n3 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-n1">
+          <a href="/downloads/sentinela-agent.ps1" download className="btn-dark">
             Baixar sentinela-agent.ps1
           </a>
         </div>

@@ -49,7 +49,7 @@ export function ThreatSection({ threats }: { threats: Threat[] }) {
         <ul className="mt-4 grid gap-3 md:grid-cols-2">
           {opportunities().map((o) => (
             <li key={o} className="flex gap-3 rounded-xl bg-ice/50 p-4 text-sm text-ink">
-              <span aria-hidden className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-teal text-xs font-bold text-white">
+              <span aria-hidden className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-teal-strong text-xs font-bold text-white">
                 ↑
               </span>
               {o}

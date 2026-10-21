@@ -13,9 +13,7 @@ export function DownloadButton({ compact = false }: { compact?: boolean }) {
         setTimeout(() => setBusy(false), 4000);
       }}
       aria-busy={busy}
-      className={`inline-flex items-center gap-2 rounded-xl bg-teal font-semibold text-white transition hover:bg-n3 ${
-        compact ? "px-4 py-2.5 text-sm" : "mt-6 px-6 py-3.5"
-      }`}
+      className={`btn-primary ${compact ? "px-4 py-2.5" : "mt-6 px-6 py-3.5 text-base"}`}
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
         <path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" />

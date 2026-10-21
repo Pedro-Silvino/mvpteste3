@@ -54,11 +54,11 @@ export function LoginForm({ next }: { next: string }) {
         {loading ? "Entrando..." : "Entrar"}
       </button>
       <p className="pt-2 text-center text-sm text-muted">
-        <Link href="/esqueci-senha" className="text-teal hover:underline">
+        <Link href="/esqueci-senha" className="text-teal-strong hover:underline">
           Esqueci minha senha
         </Link>
         {" · "}
-        <Link href="/comecar" className="text-teal hover:underline">
+        <Link href="/comecar" className="text-teal-strong hover:underline">
           Fazer o diagnóstico
         </Link>
       </p>

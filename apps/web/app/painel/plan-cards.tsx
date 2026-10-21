@@ -51,10 +51,10 @@ export function PlanCards({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[family-name:var(--font-archivo)] text-xl font-extrabold text-n1">{p.name}</h3>
+                  <h3 className="font-display text-xl font-extrabold text-n1">{p.name}</h3>
                   <p className="mt-0.5 text-sm text-muted">{p.forWho}</p>
                 </div>
-                {current && <span className="shrink-0 rounded-full bg-teal px-3 py-1 text-xs font-semibold text-white">Seu plano</span>}
+                {current && <span className="shrink-0 rounded-full bg-teal-strong px-3 py-1 text-xs font-semibold text-white">Seu plano</span>}
                 {!current && wanted && (
                   <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Pedido enviado</span>
                 )}
@@ -62,7 +62,7 @@ export function PlanCards({
               <ul className="mt-5 flex-1 space-y-2 text-sm text-ink">
                 {p.includes.map((i) => (
                   <li key={i} className="flex gap-2.5">
-                    <span aria-hidden className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-ice text-[10px] font-bold text-teal">
+                    <span aria-hidden className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-ice text-[10px] font-bold text-teal-strong">
                       ✓
                     </span>
                     {i}
@@ -74,7 +74,7 @@ export function PlanCards({
                 {isPaid && !current && (
                   <div className="mt-3">
                     {anonymous ? (
-                      <Link href="/conta" className="inline-block rounded-xl border-2 border-teal px-4 py-2.5 text-sm font-semibold text-teal hover:bg-ice">
+                      <Link href="/conta" className="btn-secondary">
                         Criar conta para escolher
                       </Link>
                     ) : (
@@ -82,7 +82,7 @@ export function PlanCards({
                         type="button"
                         onClick={() => choose(p.id as PaidPlanId)}
                         disabled={pendingPlan !== null || wanted}
-                        className="w-full rounded-xl bg-teal px-4 py-3 text-sm font-semibold text-white transition hover:bg-n3 disabled:opacity-60"
+                        className="btn-primary w-full"
                       >
                         {pendingPlan === p.id ? "Enviando…" : wanted ? "Pedido enviado" : "Quero este plano"}
                       </button>

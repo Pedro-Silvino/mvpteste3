@@ -49,7 +49,7 @@ export default async function SosPage() {
             {plan ? (
               <>
                 <b className="text-n1">Seu plano de incidente aprovado</b> (versão {plan.version}) está em{" "}
-                <Link href={`/painel/documentos/arquivo?id=${plan.id}`} className="font-semibold text-teal underline">
+                <Link href={`/painel/documentos/arquivo?id=${plan.id}`} className="font-semibold text-teal-strong underline">
                   baixar o PDF
                 </Link>
                 .
@@ -57,7 +57,7 @@ export default async function SosPage() {
             ) : (
               <>
                 Sua empresa ainda não tem um plano de incidente aprovado.{" "}
-                <Link href="/painel/documentos" className="font-semibold text-teal underline">
+                <Link href="/painel/documentos" className="font-semibold text-teal-strong underline">
                   Veja em Documentos
                 </Link>
                 .

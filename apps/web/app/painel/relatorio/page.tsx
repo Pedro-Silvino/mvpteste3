@@ -42,7 +42,7 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
               <span className="rounded-full px-3 py-1 text-sm font-bold text-white" style={{ backgroundColor: band.color }}>
                 {band.label}
               </span>
-              <span className="rounded-full border border-teal px-3 py-0.5 text-xs font-semibold text-teal">Autoavaliado</span>
+              <span className="rounded-full border border-teal px-3 py-0.5 text-xs font-semibold text-teal-strong">Autoavaliado</span>
             </div>
             <p className="mt-2 text-sm text-muted">
               Diagnóstico Express de {p.org.domain ?? p.org.name}, guardado em{" "}
@@ -70,7 +70,7 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
           <ul className="mt-3 space-y-2 text-sm text-ink">
             {FREE.map((i) => (
               <li key={i} className="flex gap-2">
-                <span aria-hidden className="text-teal">✓</span>
+                <span aria-hidden className="text-teal-strong">✓</span>
                 {i}
               </li>
             ))}
@@ -81,7 +81,7 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
           <ul className="mt-3 space-y-2 text-sm text-ink">
             {FULL.map((i) => (
               <li key={i} className="flex gap-2">
-                <span aria-hidden className={p.paid ? "text-teal" : "text-muted"}>{p.paid ? "✓" : "•"}</span>
+                <span aria-hidden className={p.paid ? "text-teal-strong" : "text-muted"}>{p.paid ? "✓" : "•"}</span>
                 {i}
               </li>
             ))}
@@ -99,7 +99,7 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
                   <p className="font-semibold text-n1">{KIND_LABEL(h.kind, h.storage_path)}</p>
                   <p className="text-xs text-muted">{formatDateTime(h.created_at)}</p>
                 </div>
-                <a href={`/painel/relatorio/arquivo?id=${h.id}`} className="text-xs font-semibold text-teal hover:underline">
+                <a href={`/painel/relatorio/arquivo?id=${h.id}`} className="text-xs font-semibold text-teal-strong hover:underline">
                   Baixar PDF
                 </a>
               </li>

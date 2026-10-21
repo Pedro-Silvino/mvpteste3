@@ -37,7 +37,7 @@ export function LockedCard({ title, text, href = "/painel/planos", cta = "Ver os
         </span>
         <h2 className="mt-3 text-xl font-bold">{title}</h2>
         <p className="mt-2 max-w-xl text-sm text-ice">{text}</p>
-        <a href={href} className="mt-5 inline-block rounded-xl bg-teal px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky hover:text-n1">
+        <a href={href} className="btn-primary mt-5 hover:bg-sky hover:text-n1">
           {cta}
         </a>
       </div>

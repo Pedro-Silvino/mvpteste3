@@ -77,7 +77,7 @@ export function Questionnaire({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className="h-full rounded-full bg-teal transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-teal-strong transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       <div key={step.id} className="mt-6 rounded-3xl bg-white p-6 shadow-lg shadow-n3/10 sm:p-9">
@@ -103,7 +103,7 @@ export function Questionnaire({
               >
                 <span
                   className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${
-                    selected ? "border-teal bg-teal" : "border-line group-hover:border-teal"
+                    selected ? "border-teal bg-teal-strong" : "border-line group-hover:border-teal"
                   }`}
                 >
                   {selected && <span className="h-2 w-2 rounded-full bg-white" />}
@@ -127,12 +127,12 @@ export function Questionnaire({
           type="button"
           disabled={index === 0 || sending}
           onClick={() => setIndex(index - 1)}
-          className="font-medium text-n3 hover:text-teal disabled:invisible"
+          className="font-medium text-n3 hover:text-teal-strong disabled:invisible"
         >
           ← Voltar
         </button>
         {answers[step.id] && !isLast && (
-          <button type="button" onClick={() => setIndex(index + 1)} className="font-medium text-n3 hover:text-teal">
+          <button type="button" onClick={() => setIndex(index + 1)} className="font-medium text-n3 hover:text-teal-strong">
             Pular para a próxima →
           </button>
         )}

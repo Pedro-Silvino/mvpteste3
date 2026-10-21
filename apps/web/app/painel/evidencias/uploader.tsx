@@ -5,9 +5,6 @@ import { ALLOWED_MIME, buildStoragePath, MAX_BYTES } from "@/lib/evidence-client
 import { createClient } from "@/lib/supabase/client";
 import { registerEvidence } from "./actions";
 
-const input =
-  "mt-1 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20";
-
 export function Uploader({ orgId, controls }: { orgId: string; controls: { id: string; name: string }[] }) {
   const [control, setControl] = useState(controls[0]?.id ?? "");
   const [state, setState] = useState<"idle" | "sending" | "ok" | "error">("idle");
@@ -41,7 +38,7 @@ export function Uploader({ orgId, controls }: { orgId: string; controls: { id: s
     <div className="space-y-4">
       <div>
         <label htmlFor="control" className="block text-sm font-semibold text-n1">Qual controle este arquivo comprova?</label>
-        <select id="control" value={control} onChange={(e) => setControl(e.target.value)} className={input}>
+        <select id="control" value={control} onChange={(e) => setControl(e.target.value)} className="field text-sm">
           {controls.map((c) => (
             <option key={c.id} value={c.id}>{c.id} · {c.name}</option>
           ))}
@@ -49,7 +46,7 @@ export function Uploader({ orgId, controls }: { orgId: string; controls: { id: s
       </div>
       <div>
         <label htmlFor="file" className="block text-sm font-semibold text-n1">Arquivo (PDF, PNG ou JPG, até 10 MB)</label>
-        <input id="file" ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg" className={input} />
+        <input id="file" ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg" className="field text-sm" />
       </div>
       <p className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-900">
         Envie só a prova do controle (um print da tela de backup, por exemplo). Não envie dados pessoais, senhas nem dados de clientes.
@@ -58,7 +55,7 @@ export function Uploader({ orgId, controls }: { orgId: string; controls: { id: s
         type="button"
         onClick={send}
         disabled={state === "sending"}
-        className="rounded-xl bg-teal px-6 py-3 text-sm font-semibold text-white transition hover:bg-n3 disabled:opacity-60"
+        className="btn-primary px-6"
       >
         {state === "sending" ? "Enviando…" : "Enviar arquivo"}
       </button>

@@ -5,7 +5,7 @@ export function ScoreRing({ score, color, size = 120, stroke = 12 }: { score: nu
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E1E8ED" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -21,7 +21,7 @@ export function ScoreRing({ score, color, size = 120, stroke = 12 }: { score: nu
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
-          <div className="font-[family-name:var(--font-archivo)] font-extrabold leading-none text-n1" style={{ fontSize: size * 0.3 }}>
+          <div className="font-display font-extrabold leading-none text-n1" style={{ fontSize: size * 0.3 }}>
             {score}
           </div>
           <div className="mt-0.5 text-[10px] text-muted">de 100</div>

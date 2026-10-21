@@ -38,7 +38,7 @@ export function ProcessingScreen({ title = "Montando o seu relatório…" }: { t
             <li key={s} className={`flex items-center gap-3 text-sm transition-opacity duration-500 ${state === "todo" ? "opacity-40" : "opacity-100"}`}>
               <span
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors duration-500 ${
-                  state === "done" ? "bg-teal text-white" : state === "active" ? "bg-ice text-teal motion-safe:animate-pulse" : "bg-line text-muted"
+                  state === "done" ? "bg-teal-strong text-white" : state === "active" ? "bg-ice text-teal-strong motion-safe:animate-pulse" : "bg-line text-muted"
                 }`}
               >
                 {state === "done" ? "✓" : i + 1}

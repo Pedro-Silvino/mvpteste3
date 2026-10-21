@@ -45,7 +45,7 @@ export default async function StaffHomePage() {
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <span className={`mr-2 rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY[a.severity]}`}>{a.severity}</span>
-                  <Link href={`/staff/org/${a.org_id}`} className="font-semibold text-n1 hover:text-teal">
+                  <Link href={`/staff/org/${a.org_id}`} className="font-semibold text-n1 hover:text-teal-strong">
                     {orgName.get(a.org_id) ?? a.org_id}
                   </Link>
                   <p className="mt-0.5 text-sm text-muted">{a.message}</p>
@@ -80,7 +80,7 @@ export default async function StaffHomePage() {
                 return (
                   <tr key={o.id}>
                     <td className="py-3 pr-3">
-                      <Link href={`/staff/org/${o.id}`} className="font-semibold text-n1 hover:text-teal">
+                      <Link href={`/staff/org/${o.id}`} className="font-semibold text-n1 hover:text-teal-strong">
                         {o.domain ?? o.name}
                       </Link>
                       {o.domain && o.name !== o.domain && <p className="text-xs text-muted">{o.name}</p>}

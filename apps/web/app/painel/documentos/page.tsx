@@ -92,7 +92,7 @@ export default async function DocumentosPage() {
               <h3 className="font-bold text-n1">{g.name}</h3>
               <p className="mt-1 flex-1 text-sm text-muted">{g.text}</p>
               {p.paid ? (
-                <a href={g.href} className="mt-3 text-sm font-semibold text-teal hover:underline">Abrir</a>
+                <a href={g.href} className="mt-3 text-sm font-semibold text-teal-strong hover:underline">Abrir</a>
               ) : (
                 <p className="mt-3 text-xs font-semibold text-muted">Disponível nos planos pagos</p>
               )}
