@@ -12,6 +12,7 @@ const ITEMS = [
   { href: "/painel/documentos", label: "Documentos", icon: "kits" },
   { href: "/painel/respostas", label: "Respostas", icon: "answers" },
   { href: "/painel/empresa", label: "Empresa", icon: "building" },
+  { href: "/painel/sos", label: "SOS", icon: "alert" },
 ] as const;
 
 export function SidebarNav({ variant }: { variant: "side" | "top" }) {

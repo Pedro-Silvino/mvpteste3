@@ -1,0 +1,16 @@
+{% extends "docs/_doc_base.html" %}
+{% block conteudo %}
+<p style="margin-top:4mm">A <b>{{ empresa }}</b>{% if cnpj %}, inscrita no CNPJ sob o nº {{ cnpj }}{% endif %}, por meio de sua diretoria, <b>designa {{ responsavel }}</b> como responsável pela segurança da informação da empresa, com as atribuições abaixo.</p>
+<h2>Atribuições</h2>
+<ul>
+  <li>Acompanhar o cumprimento da Política de Segurança da Informação e propor melhorias.</li>
+  <li>Ser o ponto de contato para dúvidas, suspeitas e incidentes de segurança.</li>
+  <li>Acionar o Plano de Incidente e coordenar a resposta, avisando as pessoas e entidades previstas.</li>
+  <li>Garantir que acessos sejam concedidos e removidos conforme a função de cada pessoa.</li>
+  <li>Acompanhar backups, atualizações, antivírus e o treinamento da equipe.</li>
+  <li>Reportar à diretoria, ao menos uma vez por ano, a situação dos controles de segurança.</li>
+</ul>
+<h2>Vigência</h2>
+<p>Esta designação vale a partir de {{ data }} e permanece até que a diretoria designe outra pessoa por escrito.</p>
+<div class="sign"><div>Diretoria<br>Data: ____ / ____ / ________</div><div>{{ responsavel }}<br>Ciente e de acordo</div></div>
+{% endblock %}

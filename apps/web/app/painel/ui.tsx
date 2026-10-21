@@ -83,6 +83,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01" strokeLinecap="round" />
     </>
   ),
+  alert: (
+    <>
+      <path d="M12 3l10 18H2L12 3z" strokeLinejoin="round" />
+      <path d="M12 10v5m0 3h.01" strokeLinecap="round" />
+    </>
+  ),
   check: <path d="M5 12l5 5 9-10" strokeLinecap="round" strokeLinejoin="round" />,
 };
 

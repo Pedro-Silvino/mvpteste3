@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>{{ titulo }} — {{ empresa }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --n1:#051623; --n3:#12324A; --teal:#4290AE; --sky:#89D1E2; --ice:#D8EEF5; --muted:#52606F; --line:#E1E8ED; }
+  @page { size: A4; margin: 18mm 18mm 22mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Hanken Grotesk", "Segoe UI", Arial, sans-serif; color: var(--n1); font-size: 10.5pt; line-height: 1.5; }
+  h1, h2 { font-family: "Archivo", "Segoe UI", Arial, sans-serif; color: var(--n3); }
+  .brand { font-family: "Archivo", sans-serif; font-weight: 800; letter-spacing: .08em; font-size: 9pt; color: var(--teal); text-transform: uppercase; }
+  h1 { font-size: 20pt; line-height: 1.15; margin: 3mm 0 2mm; }
+  .meta { color: var(--muted); font-size: 9.5pt; border-bottom: .4mm solid var(--line); padding-bottom: 4mm; margin-bottom: 5mm; }
+  .review { background: #FBEBCF; color: #7a5206; border-radius: 2mm; padding: 2.5mm 4mm; font-size: 9pt; margin-bottom: 5mm; }
+  h2 { font-size: 12pt; margin: 5mm 0 1.5mm; }
+  p { margin-bottom: 2mm; }
+  ul, ol { margin: 0 0 2mm 6mm; }
+  li { margin-bottom: 1mm; }
+  .fill { display: inline-block; min-width: 55mm; border-bottom: .3mm solid var(--n1); }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 3mm; }
+  td, th { border: .3mm solid var(--line); padding: 2mm 3mm; text-align: left; vertical-align: top; font-size: 10pt; }
+  th { background: var(--ice); font-weight: 600; }
+  .sign { display: flex; gap: 12mm; margin-top: 14mm; page-break-inside: avoid; }
+  .sign div { flex: 1; border-top: .3mm solid var(--n1); padding-top: 1.5mm; font-size: 9.5pt; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="brand">DataDops · Sentinela</div>
+<h1>{{ titulo }}</h1>
+<div class="meta">{{ empresa }}{% if cnpj %} · CNPJ {{ cnpj }}{% endif %} · versão {{ versao }} · gerado em {{ data }}</div>
+<div class="review"><b>[REVISÃO JURÍDICA]</b> Modelo-base gerado pelo Sentinela. Ajuste ao que a empresa realmente faz e revise com o responsável jurídico antes de aprovar.</div>
+{% block conteudo %}{% endblock %}
+</body>
+</html>

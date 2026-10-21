@@ -1,0 +1,40 @@
+{% extends "docs/_doc_base.html" %}
+{% block conteudo %}
+<h2>1. Objetivo</h2>
+<p>Reunir o que a {{ empresa }} deve fazer, quem deve avisar e em que ordem quando houver um incidente de segurança, para reduzir o tempo de parada e o dano.</p>
+<h2>2. O que é um incidente</h2>
+<p>Qualquer evento que ameace dados ou sistemas: vírus ou tela de resgate, conta invadida, e-mail falso que enganou alguém, perda ou roubo de equipamento, vazamento de dados, indisponibilidade de sistema crítico.</p>
+<h2>3. Primeiros 30 minutos</h2>
+<ol>
+  <li>Quem percebeu avisa o responsável pela segurança e anota o horário e o que viu.</li>
+  <li>Desconectar da rede o equipamento afetado (cabo e Wi-Fi). Não desligar nem formatar.</li>
+  <li>Não pagar resgate nem responder aos golpistas antes de falar com o responsável e com a equipe de apoio.</li>
+  <li>Trocar, de outro aparelho, as senhas das contas que possam ter sido expostas, começando pelo e-mail.</li>
+  <li>Preservar evidências: fotos da tela, mensagens e horários.</li>
+</ol>
+<h2>4. Quem avisar</h2>
+<table>
+  <tr><th>Quem</th><th>Nome</th><th>Contato</th></tr>
+  <tr><td>Responsável pela segurança</td><td><span class="fill"></span></td><td><span class="fill"></span></td></tr>
+  <tr><td>TI / prestador</td><td><span class="fill"></span></td><td><span class="fill"></span></td></tr>
+  <tr><td>Diretoria</td><td><span class="fill"></span></td><td><span class="fill"></span></td></tr>
+  <tr><td>Corretor / seguradora (se houver seguro cyber)</td><td><span class="fill"></span></td><td><span class="fill"></span></td></tr>
+  <tr><td>Encarregado de dados (LGPD)</td><td><span class="fill"></span></td><td><span class="fill"></span></td></tr>
+  <tr><td>Equipe de apoio DataDops</td><td>Chamado SOS no painel Sentinela</td><td>—</td></tr>
+</table>
+<h2>5. Comunicações</h2>
+<ul>
+  <li><b>Seguradora:</b> conferir na apólice o prazo e a forma de aviso, e avisar dentro dele.</li>
+  <li><b>ANPD e titulares:</b> se dados pessoais foram afetados, avaliar a comunicação prevista no art. 48 da LGPD, no prazo orientado pela ANPD. <i>[REVISÃO JURÍDICA]</i></li>
+  <li><b>Clientes e fornecedores:</b> avisar quando houver risco para eles, com texto aprovado pela diretoria.</li>
+</ul>
+<h2>6. Recuperação</h2>
+<ul>
+  <li>Restaurar sistemas a partir do backup mais recente confiável, depois de remover a causa.</li>
+  <li>Reinstalar equipamentos comprometidos e trocar todas as senhas e chaves relacionadas.</li>
+  <li>Confirmar com a TI que o ataque foi contido antes de religar sistemas.</li>
+</ul>
+<h2>7. Registro e lições aprendidas</h2>
+<p>Registrar data, hora, o que aconteceu, o que foi feito, quem foi avisado e o resultado. Em até 30 dias, revisar o que mudar nas regras e nos controles para evitar repetição.</p>
+<div class="sign"><div>Diretoria<br>Data: ____ / ____ / ________</div><div>Responsável pela segurança</div></div>
+{% endblock %}

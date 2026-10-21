@@ -41,7 +41,7 @@ class SupabaseDb:
     def claim_job(self) -> dict | None:
         r = self.client.get(
             "/jobs",
-            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar)", "order": "created_at", "limit": 1},
+            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar,relatorio)", "order": "created_at", "limit": 1},
         )
         r.raise_for_status()
         rows = r.json()
@@ -123,3 +123,26 @@ class SupabaseDb:
         )
         r.raise_for_status()
         return bool(r.json())
+
+    def org_profile(self, org_id: str) -> dict | None:
+        r = self.client.get("/organizations", params={"id": f"eq.{org_id}", "select": "name,cnpj,domain"})
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+
+    def next_document_version(self, org_id: str, kind: str) -> int:
+        r = self.client.get(
+            "/documents",
+            params={"org_id": f"eq.{org_id}", "kind": f"eq.{kind}", "select": "version", "order": "version.desc", "limit": 1},
+        )
+        r.raise_for_status()
+        rows = r.json()
+        return (rows[0]["version"] + 1) if rows else 1
+
+    def upload_document(self, path: str, pdf: bytes) -> None:
+        self.storage.post(
+            f"/object/documents/{path}", content=pdf, headers={"Content-Type": "application/pdf", "x-upsert": "true"}
+        ).raise_for_status()
+
+    def save_document_row(self, **kw) -> None:
+        self.client.post("/documents", json=kw).raise_for_status()

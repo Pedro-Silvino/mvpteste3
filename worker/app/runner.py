@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime
 from typing import Protocol
 
 from app.engine.scoring import compute_control_results, score
+from app.documents import DOC_FOOTER, build_document_context, render_document_html
 from app.report import build_context, render_html, render_pdf, warm_up
 from app.scans.external import (
     build_summary,
@@ -33,6 +34,10 @@ class Db(Protocol):
     def upload_report(self, path: str, pdf: bytes) -> None: ...
     def save_report_row(self, **kw) -> None: ...
     def has_report(self, assessment_id: str, path: str) -> bool: ...
+    def org_profile(self, org_id: str) -> dict | None: ...
+    def next_document_version(self, org_id: str, kind: str) -> int: ...
+    def upload_document(self, path: str, pdf: bytes) -> None: ...
+    def save_document_row(self, **kw) -> None: ...
 
 
 def _scan_externo(db: Db, job: dict) -> None:
@@ -84,6 +89,25 @@ def _processar(db: Db, job: dict) -> None:
         _publish(db, org_id, asmt, full_path, pdf)
 
 
+def _documento(db: Db, job: dict) -> None:
+    """Gera um documento pedido no painel (política, plano de incidente ou designação) e registra o hash."""
+    org_id = job["org_id"]
+    payload = job.get("payload") or {}
+    kind = payload.get("document")
+    responsavel = (payload.get("responsavel") or "").strip()
+    if kind == "designacao" and not responsavel:
+        raise ValueError("responsavel_required")
+    profile = db.org_profile(org_id) or {}
+    # o nome provisório é o próprio domínio: nesse caso o documento usa o domínio como nome da empresa
+    empresa = profile.get("name") or profile.get("domain") or ""
+    version = db.next_document_version(org_id, kind)
+    ctx = build_document_context(kind, empresa, profile.get("cnpj"), responsavel, version, date.today())  # valida o tipo
+    pdf = render_pdf(render_document_html(kind, ctx), DOC_FOOTER)
+    path = f"{org_id}/{kind}-v{version}.pdf"
+    db.upload_document(path, pdf)
+    db.save_document_row(org_id=org_id, kind=kind, version=version, storage_path=path, sha256=hashlib.sha256(pdf).hexdigest())
+
+
 def process_one(db: Db) -> bool:
     """Processa um job. Devolve False se não havia nenhum pendente."""
     job = db.claim_job()
@@ -94,6 +118,8 @@ def process_one(db: Db) -> bool:
             _scan_externo(db, job)
         elif job["kind"] == "processar":
             _processar(db, job)
+        elif job["kind"] == "relatorio":
+            _documento(db, job)
         else:  # relatorio / mensal chegam nas tarefas T20+; devolve para a fila
             db.finish_job(job["id"], "pendente", "unsupported_kind")
             return True

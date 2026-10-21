@@ -122,7 +122,7 @@ def _reset_browser() -> None:
     _state.browser = None
 
 
-def _print(browser, html: str) -> bytes:
+def _print(browser, html: str, footer: str | None = None) -> bytes:
     page = browser.new_page()
     try:
         page.set_content(html, wait_until="load")
@@ -130,15 +130,16 @@ def _print(browser, html: str) -> bytes:
             page.evaluate("document.fonts.ready")
         except Exception:  # noqa: BLE001
             pass
-        return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
+        extra = {"display_header_footer": True, "header_template": "<span></span>", "footer_template": footer} if footer else {}
+        return page.pdf(format="A4", print_background=True, prefer_css_page_size=True, **extra)
     finally:
         page.close()
 
 
-def render_pdf(html: str) -> bytes:
+def render_pdf(html: str, footer: str | None = None) -> bytes:
     if getattr(_state, "browser", None) is not None:
         try:
-            return _print(_state.browser, html)
+            return _print(_state.browser, html, footer)
         except Exception:  # noqa: BLE001 - navegador morreu: recomeça do zero na próxima
             _reset_browser()
             raise
@@ -147,6 +148,6 @@ def render_pdf(html: str) -> bytes:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         try:
-            return _print(browser, html)
+            return _print(browser, html, footer)
         finally:
             browser.close()
