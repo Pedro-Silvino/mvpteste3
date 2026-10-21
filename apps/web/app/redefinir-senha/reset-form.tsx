@@ -21,7 +21,7 @@ export function ResetForm() {
     const { error } = await createClient().auth.updateUser({ password: parsed.data.password });
     setLoading(false);
     if (error) return setError(authErrorMessage(error.code, error.status));
-    router.replace("/diagnostico");
+    router.replace("/painel");
     router.refresh();
   }
 

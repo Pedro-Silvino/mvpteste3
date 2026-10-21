@@ -51,5 +51,5 @@ export async function submitAssessment(assessmentId: string) {
     console.error("submit_assessment failed", { code: error.code, message: error.message });
     return { ok: false as const };
   }
-  redirect("/resultado");
+  redirect("/painel");
 }

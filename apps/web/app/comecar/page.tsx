@@ -16,7 +16,7 @@ export default async function ComecarPage() {
       .from("memberships")
       .select("org_id", { count: "exact", head: true })
       .eq("user_id", user.id);
-    if (count && count > 0) redirect("/diagnostico");
+    if (count && count > 0) redirect("/painel");
   }
 
   return (

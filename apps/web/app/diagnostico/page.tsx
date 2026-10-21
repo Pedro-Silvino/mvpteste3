@@ -24,7 +24,7 @@ export default async function DiagnosticoPage() {
     .limit(1)
     .maybeSingle();
   if (!assessment) redirect("/comecar");
-  if (assessment.status !== "rascunho") redirect("/resultado");
+  if (assessment.status !== "rascunho") redirect("/painel");
 
   const { data: rows } = await supabase
     .from("answers")

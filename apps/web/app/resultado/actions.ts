@@ -17,6 +17,6 @@ export async function requestPlan(orgId: string, plan: string): Promise<{ ok: bo
     console.error("request_plan failed", { code: error.code, message: error.message });
     return { ok: false, needsAccount: error.message.includes("account_required") };
   }
-  revalidatePath("/painel");
+  revalidatePath("/painel", "layout");
   return { ok: true };
 }

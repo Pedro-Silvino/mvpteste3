@@ -10,7 +10,7 @@ export default async function ContaPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/comecar");
-  if (!user.is_anonymous) redirect("/diagnostico");
+  if (!user.is_anonymous) redirect("/painel");
 
   return (
     <main className="flex flex-1 items-center justify-center bg-ice px-4 py-12">

@@ -34,7 +34,7 @@ export function AccountForm() {
     if (passwordStep.error) {
       return setError(authErrorMessage(passwordStep.error.code, passwordStep.error.status));
     }
-    router.replace("/diagnostico");
+    router.replace("/painel");
     router.refresh();
   }
 

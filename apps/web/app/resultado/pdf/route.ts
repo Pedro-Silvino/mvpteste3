@@ -4,7 +4,7 @@ import { isPaidPlan } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
 function back(request: Request, error: string) {
-  return NextResponse.redirect(new URL(`/resultado?erro=${error}`, request.url));
+  return NextResponse.redirect(new URL(`/painel/relatorio?erro=${error}`, request.url));
 }
 
 // Short-lived signed URL (5 min). Free plan gets the free PDF (score + totals); paid plans get the full one

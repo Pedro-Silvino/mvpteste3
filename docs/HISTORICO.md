@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-21 — Painel completo com menu lateral; fluxo vai direto para ele (D23)
+- Feito: `/painel` com layout próprio (barra lateral escura no desktop, abas roláveis no celular) e 6 telas: Visão geral (4 indicadores, riscos, próximos passos), Riscos (tipos de ataque; lacunas com "como resolver" só em plano pago), Relatório (anel da nota, download, o que cada formato traz), Planos (4 planos, pedido), Documentos (kits, orientações, coletor), Respostas. Questionário, criar conta, redefinir senha e cadastro agora terminam em `/painel`.
+- Arquivos: `apps/web/app/painel/*`, `apps/web/lib/painel-data.ts`, `apps/web/app/_components/threat-section.tsx`, `apps/web/app/resultado/*`.
+- Decisões: D23.
+- Testes: Vitest 45/45, lint e typecheck ok. NÃO verificado: visual no navegador (sem sessão para abrir o painel aqui) e build de produção (não rodei para não atrapalhar o pnpm dev).
+- Próximo passo: Pedro olha o painel e aponta ajustes; aprovar a migração `request_plan` e o reprocessamento do diagnóstico de teste.
+- Bloqueios: ok do Pedro (migração e reprocessamento).
+
 ## 2026-10-21 — Riscos no resultado, scan validado e mais rápido (D21, D22)
 - Feito: `/resultado`, `/painel` e PDF grátis (agora 2 páginas) mostram tipos de ataque, exposição, prejuízo possível e oportunidades. Tela de espera animada (`ProcessingScreen`) e atualização a cada 1,5 s. Prova de que o scan roda: data e hora, domínio e o que foi verificado. Worker: Chromium aquecido e reaproveitado (PDF de 2 s para 0,6 s), fila consultada a cada 1 s, PDF grátis publicado antes do completo (etapas idempotentes).
 - Validação do scan: jobs e `scan_results` reais no banco (prohd.com.br 22 s e datadops.com.br 38 s no worker, nota externa 86 e 58); comparado com `Resolve-DnsName`, `curl` e leitura do certificado: SPF, DMARC, HSTS e validade do certificado batem. Achou um erro: datadops.com.br responde 403 ao cliente Python e o scan dava falha; corrigido (D22). Tempo do scan: 36 s caiu para 3 s (DKIM em série era quase tudo).
