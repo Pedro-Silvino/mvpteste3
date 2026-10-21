@@ -18,7 +18,7 @@ export const getPainel = cache(async () => {
   const orgId = await currentOrgId(supabase, user.id);
   if (!orgId) redirect("/comecar");
 
-  const { data: org } = await supabase.from("organizations").select("id, name, domain, plan").eq("id", orgId).maybeSingle();
+  const { data: org } = await supabase.from("organizations").select("id, name, domain, plan, cnpj, sector, employees_range").eq("id", orgId).maybeSingle();
   if (!org) redirect("/comecar");
 
   const { data: assessment } = await supabase
@@ -50,6 +50,7 @@ export const getPainel = cache(async () => {
     score: assessment.score as number | null,
     savedOn: report?.created_at ?? null,
     paid: isPaidPlan(org.plan),
+    profileComplete: !!org.cnpj && !!org.sector && !!org.employees_range && org.name !== org.domain,
     requestedPlan: (requests?.[0]?.message.split("plano ")[1] as PaidPlanId | undefined) ?? null,
     answers: new Map((answers ?? []).map((a) => [a.question_id, a.value])),
     rows,

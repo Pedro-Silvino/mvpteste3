@@ -32,3 +32,27 @@ describe("organizationSchema", () => {
     }
   });
 });
+
+import { companyProfileSchema } from "./organization";
+
+describe("companyProfileSchema", () => {
+  const base = { name: "Empresa Exemplo Ltda", cnpj: "11.222.333/0001-81", sector: "servicos", employeesRange: "11-50" };
+
+  it("accepts a full profile and keeps only the CNPJ digits", () => {
+    const r = companyProfileSchema.safeParse(base);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.cnpj).toBe("11222333000181");
+  });
+
+  it("treats CNPJ, sector and size as optional", () => {
+    const r = companyProfileSchema.safeParse({ name: "Empresa Exemplo", cnpj: "", sector: "", employeesRange: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toEqual({ name: "Empresa Exemplo", cnpj: "", sector: "", employeesRange: "" });
+  });
+
+  it("rejects bad input", () => {
+    for (const patch of [{ name: "A" }, { name: "x".repeat(161) }, { cnpj: "11.222.333/0001-80" }, { sector: "cassino" }, { employeesRange: "9999" }]) {
+      expect(companyProfileSchema.safeParse({ ...base, ...patch }).success, JSON.stringify(patch)).toBe(false);
+    }
+  });
+});

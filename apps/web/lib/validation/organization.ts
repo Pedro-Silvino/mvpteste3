@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidCnpj, onlyDigits } from "../cnpj";
 
 export const SECTORS = [
   { value: "servicos", label: "Serviços" },
@@ -36,3 +37,15 @@ export const organizationSchema = z.object({
 });
 
 export type OrganizationInput = z.infer<typeof organizationSchema>;
+
+// Completed after the diagnostic, from the dashboard. Everything but the name is optional.
+export const companyProfileSchema = z.object({
+  name: z.string().trim().min(2, "Informe o nome da empresa.").max(160, "Nome muito longo."),
+  cnpj: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || isValidCnpj(v), "CNPJ inválido. Confira os números.")
+    .transform((v) => (v === "" ? "" : onlyDigits(v))),
+  sector: z.union([z.literal(""), z.enum(SECTORS.map((s) => s.value) as [string, ...string[]])], { message: "Escolha o setor." }),
+  employeesRange: z.union([z.literal(""), z.enum(EMPLOYEE_RANGES)], { message: "Escolha a faixa de funcionários." }),
+});

@@ -35,6 +35,12 @@ export default async function VisaoGeralPage() {
   const steps = [
     { done: true, title: "Diagnóstico concluído", text: "Nota, riscos e relatório gratuito prontos.", href: "/painel/relatorio" },
     {
+      done: p.profileComplete,
+      title: p.profileComplete ? "Dados da empresa completos" : "Completar os dados da empresa",
+      text: "Nome, CNPJ, setor e porte. Leva 1 minuto.",
+      href: "/painel/empresa",
+    },
+    {
       done: p.paid,
       title: p.paid ? "Plano ativo" : p.requestedPlan ? "Pedido de plano enviado" : "Escolher um plano",
       text: p.paid ? `Plano ${planName(p.org.plan)}.` : p.requestedPlan ? "A equipe DataDops fala com você pelo e-mail da conta." : "Compare os planos e peça a proposta.",

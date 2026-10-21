@@ -383,6 +383,60 @@ export type Database = {
           },
         ]
       }
+      evidence: {
+        Row: {
+          control_id: string
+          created_at: string
+          file_name: string
+          id: string
+          mime: string
+          org_id: string
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          control_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          mime: string
+          org_id: string
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          control_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime?: string
+          org_id?: string
+          sha256?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_control_id_fkey"
+            columns: ["control_id"]
+            isOneToOne: false
+            referencedRelation: "controls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents: {
         Row: {
           created_at: string
@@ -704,6 +758,15 @@ export type Database = {
     }
     Functions: {
       approve_document: { Args: { p_document: string }; Returns: undefined }
+      open_incident: { Args: { p_description: string; p_org: string }; Returns: string }
+      org_is_paid: { Args: { p_org: string }; Returns: boolean }
+      request_document: { Args: { p_kind: string; p_org: string; p_params: Json }; Returns: undefined }
+      staff_resolve_alert: { Args: { p_alert: string }; Returns: undefined }
+      staff_set_plan: { Args: { p_org: string; p_plan: string }; Returns: undefined }
+      update_organization_profile: {
+        Args: { p_cnpj: string; p_employees_range: string; p_name: string; p_org: string; p_sector: string }
+        Returns: undefined
+      }
       create_agent_token: {
         Args: { p_label: string; p_org: string }
         Returns: string
