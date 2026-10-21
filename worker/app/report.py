@@ -98,6 +98,41 @@ def build_context(empresa: str, results: list[dict], external: dict | None, toda
     return ctx
 
 
+_STATUS_CLS = {"atende": "atende", "parcial": "parcial", "nao_atende": "nao_atende", "sem_dado": "sem_dado", "ok": "ok", "falha": "falha"}
+
+
+def build_monthly_context(empresa: str, results: list[dict], prev_score: int | None, diff: dict, ext_diff: dict, today: date) -> dict:
+    nota = score(results)
+    ext_names = {c["id"]: c["nome"] for c in CATALOG["checagens_externas"]}
+
+    def control_rows(items: list[dict]) -> list[dict]:
+        return [
+            {"nome": CONTROLS[i["control_id"]]["nome"], "de": STATUS_LABEL[i["from"]], "para": STATUS_LABEL[i["to"]], "para_cls": _STATUS_CLS[i["to"]]}
+            for i in items
+        ]
+
+    return {
+        "empresa": empresa,
+        "data": today.strftime("%d/%m/%Y"),
+        "nota": nota,
+        "faixa": band(nota),
+        "rodape": FOOTER_REST,
+        "resumo": {s: sum(1 for r in results if r["status"] == s) for s in ("atende", "parcial", "nao_atende", "sem_dado")},
+        "nota_anterior": prev_score,
+        "variacao": (nota - prev_score) if prev_score is not None else 0,
+        "piorou": control_rows(diff["worse"]),
+        "melhorou": control_rows(diff["better"]),
+        "externo_piorou": [
+            {"nome": ext_names.get(i["check_id"], i["check_id"]), "de": STATUS_LABEL.get(i["from"], i["from"]), "para": "Atenção" if i["to"] == "parcial" else STATUS_LABEL.get(i["to"], i["to"]), "para_cls": _STATUS_CLS[i["to"]]}
+            for i in ext_diff["worse"]
+        ],
+    }
+
+
+def render_monthly_html(ctx: dict) -> str:
+    return _env.get_template("relatorio_mensal.html").render(**ctx)
+
+
 def render_html(ctx: dict) -> str:
     name = "relatorio_completo.html" if ctx["completo"] else "relatorio_gratuito.html"
     return _env.get_template(name).render(**ctx)

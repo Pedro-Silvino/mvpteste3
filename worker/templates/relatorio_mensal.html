@@ -1,0 +1,59 @@
+{% extends "_base.html" %}
+{% block pages %}
+<section class="page">
+  <div class="hero">
+    <div class="brand">DataDops · Sentinela</div>
+    <h1>Relatório mensal<br>de segurança digital</h1>
+    <div class="sub">O que mudou desde a última verificação</div>
+    <div class="meta">
+      <div><span>Empresa</span><b>{{ empresa }}</b></div>
+      <div><span>Verificação feita em</span><b>{{ data }}</b></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="score-row">
+      <div class="dial"><span class="n">{{ nota }}</span><span class="of">de 100</span></div>
+      <div>
+        <span class="band">{{ faixa.rotulo }}</span><span class="seal">Autoavaliado</span>
+        <p>
+          {% if nota_anterior is not none %}
+            Mês passado: <b>{{ nota_anterior }}</b>.
+            {% if variacao > 0 %}A nota <b>subiu {{ variacao }}</b> ponto{{ "s" if variacao != 1 }}.
+            {% elif variacao < 0 %}A nota <b>caiu {{ -variacao }}</b> ponto{{ "s" if variacao != -1 }}.
+            {% else %}A nota ficou igual.{% endif %}
+          {% else %}Esta é a primeira verificação mensal.{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="counts">
+      <span class="chip s-atende">{{ resumo.atende }} atendem</span>
+      <span class="chip s-parcial">{{ resumo.parcial }} parciais</span>
+      <span class="chip s-nao_atende">{{ resumo.nao_atende }} não atendem</span>
+      <span class="chip s-sem_dado">{{ resumo.sem_dado }} sem dado</span>
+    </div>
+
+    <h2>O que piorou</h2>
+    {% if piorou or externo_piorou %}
+    <table>
+      <tr><th>Item</th><th>Antes</th><th>Agora</th></tr>
+      {% for c in piorou %}<tr><td>{{ c.nome }}</td><td>{{ c.de }}</td><td><span class="chip s-{{ c.para_cls }}">{{ c.para }}</span></td></tr>{% endfor %}
+      {% for c in externo_piorou %}<tr><td>{{ c.nome }} <span class="note-div">(checagem pública)</span></td><td>{{ c.de }}</td><td><span class="chip s-{{ c.para_cls }}">{{ c.para }}</span></td></tr>{% endfor %}
+    </table>
+    <p class="note">Avalie com o seu corretor se a mudança precisa ser comunicada à seguradora.</p>
+    {% else %}
+    <div class="empty">Nada piorou desde a última verificação.</div>
+    {% endif %}
+
+    {% if melhorou %}
+    <h2>O que melhorou</h2>
+    <table>
+      <tr><th>Controle</th><th>Antes</th><th>Agora</th></tr>
+      {% for c in melhorou %}<tr><td>{{ c.nome }}</td><td>{{ c.de }}</td><td><span class="chip s-{{ c.para_cls }}">{{ c.para }}</span></td></tr>{% endfor %}
+    </table>
+    {% endif %}
+  </div>
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>
+</section>
+{% endblock %}

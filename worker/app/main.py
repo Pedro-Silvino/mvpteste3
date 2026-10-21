@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.db import SupabaseDb, load_env
 from app.ingest import router as ingest_router
+from app.monthly import run_scheduler
 from app.runner import run_forever
 
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +21,8 @@ async def lifespan(_: FastAPI):
     # The job loop runs in a background thread; skipped when the service credentials aren't set (e.g. tests).
     if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
         threading.Thread(target=run_forever, args=(SupabaseDb.from_env(),), kwargs={"warm": True}, daemon=True).start()
-        log.info("fila de jobs LIGADA")
+        threading.Thread(target=run_scheduler, args=(SupabaseDb.from_env(),), daemon=True).start()
+        log.info("fila de jobs e agendador mensal LIGADOS")
     else:
         missing = [k for k in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY") if not os.environ.get(k)]
         log.warning(

@@ -31,6 +31,7 @@ class SupabaseDb:
         tls = ssl.create_default_context()
         headers = {"apikey": service_key, "Authorization": f"Bearer {service_key}"}
         self.client = httpx.Client(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=20, verify=tls)
+        self.auth_admin = httpx.Client(base_url=f"{url.rstrip('/')}/auth/v1", headers=headers, timeout=20, verify=tls)
         self.storage = httpx.Client(base_url=f"{url.rstrip('/')}/storage/v1", headers=headers, timeout=60, verify=tls)
 
     @classmethod
@@ -41,7 +42,7 @@ class SupabaseDb:
     def claim_job(self) -> dict | None:
         r = self.client.get(
             "/jobs",
-            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar,relatorio)", "order": "created_at", "limit": 1},
+            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar,relatorio,mensal)", "order": "created_at", "limit": 1},
         )
         r.raise_for_status()
         rows = r.json()
@@ -228,3 +229,76 @@ class SupabaseDb:
             self.client.post(
                 "/jobs", json={"org_id": org_id, "assessment_id": asmt, "kind": "processar", "payload": {"completo": True}}
             ).raise_for_status()
+
+    # ---- verificação mensal
+    def paid_org_ids(self) -> list[str]:
+        r = self.client.get("/organizations", params={"plan": "neq.express", "select": "id"})
+        r.raise_for_status()
+        return [row["id"] for row in r.json()]
+
+    def latest_assessment(self, org_id: str) -> dict | None:
+        r = self.client.get(
+            "/assessments",
+            params={"org_id": f"eq.{org_id}", "order": "created_at.desc", "limit": 1, "select": "id,created_at,kind,status"},
+        )
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+
+    def create_mensal(self, org_id: str) -> None:
+        src = self.client.get(
+            "/assessments",
+            params={"org_id": f"eq.{org_id}", "status": "eq.concluido", "order": "created_at.desc", "limit": 1, "select": "id,created_by"},
+        )
+        src.raise_for_status()
+        if not src.json():
+            return
+        source = src.json()[0]
+        created = self.client.post(
+            "/assessments",
+            json={"org_id": org_id, "kind": "mensal", "status": "processando", "created_by": source["created_by"]},
+            headers={"Prefer": "return=representation"},
+        )
+        created.raise_for_status()
+        asmt = created.json()[0]["id"]
+        answers = self.client.get("/answers", params={"assessment_id": f"eq.{source['id']}", "select": "question_id,value,answered_by"})
+        answers.raise_for_status()
+        rows = [{**a, "assessment_id": asmt} for a in answers.json()]
+        if rows:
+            self.client.post("/answers", json=rows).raise_for_status()
+        self.client.post("/jobs", json={"org_id": org_id, "assessment_id": asmt, "kind": "mensal"}).raise_for_status()
+
+    def previous_results(self, org_id: str, current_assessment: str) -> tuple[list[dict], int | None]:
+        r = self.client.get(
+            "/assessments",
+            params={
+                "org_id": f"eq.{org_id}", "status": "eq.concluido", "id": f"neq.{current_assessment}",
+                "order": "created_at.desc", "limit": 1, "select": "id,score",
+            },
+        )
+        r.raise_for_status()
+        if not r.json():
+            return [], None
+        prev = r.json()[0]
+        rows = self.client.get("/control_results", params={"assessment_id": f"eq.{prev['id']}", "select": "control_id,status"})
+        rows.raise_for_status()
+        return rows.json(), prev["score"]
+
+    def previous_external_checks(self, org_id: str) -> dict | None:
+        summary = self.latest_external_summary(org_id)
+        return summary["checks"] if summary else None
+
+    def insert_alert(self, org_id: str, control_id: str | None, severity: str, message: str) -> None:
+        self.client.post(
+            "/alerts", json={"org_id": org_id, "control_id": control_id, "severity": severity, "message": message[:500]}
+        ).raise_for_status()
+
+    def owner_email(self, org_id: str) -> str | None:
+        m = self.client.get("/memberships", params={"org_id": f"eq.{org_id}", "role": "eq.owner", "select": "user_id", "limit": 1})
+        m.raise_for_status()
+        if not m.json():
+            return None
+        u = self.auth_admin.get(f"/admin/users/{m.json()[0]['user_id']}")
+        if u.status_code != 200:
+            return None
+        return u.json().get("email") or None  # sessão anônima não tem e-mail
