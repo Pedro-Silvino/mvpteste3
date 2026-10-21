@@ -31,6 +31,16 @@ describe("organizationSchema", () => {
       expect(organizationSchema.safeParse({ ...valid, domain }).success, domain).toBe(false);
     }
   });
+
+  // Same rule as the worker (worker/app/scans/external.py, _DOMAIN_RE): a domain accepted here must be scannable.
+  it("rejects what the worker would refuse to scan", () => {
+    for (const domain of ["-empresa.com.br", "empresa-.com.br", "a..com", "empresa.com.", `${"a".repeat(64)}.com`, "x.c", "10.0.0.1", "emp_resa.com"]) {
+      expect(organizationSchema.safeParse({ ...valid, domain }).success, domain).toBe(false);
+    }
+    for (const domain of ["x.co", "minha-empresa.com.br", "a1.b2.empresa.io"]) {
+      expect(organizationSchema.safeParse({ ...valid, domain }).success, domain).toBe(true);
+    }
+  });
 });
 
 import { companyProfileSchema } from "./organization";

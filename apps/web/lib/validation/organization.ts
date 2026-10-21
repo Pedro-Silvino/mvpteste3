@@ -26,13 +26,16 @@ export function normalizeDomain(value: string): string {
     .replace(/^www\./, "");
 }
 
+// Same regex as the worker (worker/app/scans/external.py, _DOMAIN_RE): what passes here can be scanned.
+const DOMAIN_RE = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+
 // Short first step: only the domain is needed for the public checks. Company name, CNPJ, sector
 // and size are collected later (the name defaults to the domain).
 export const organizationSchema = z.object({
   domain: z
     .string()
     .transform(normalizeDomain)
-    .refine((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d), "Informe o site ou domínio de e-mail (ex.: suaempresa.com.br)."),
+    .refine((d) => DOMAIN_RE.test(d), "Informe o site ou domínio de e-mail (ex.: suaempresa.com.br)."),
   acceptTerms: z.literal("on", { message: "É preciso aceitar os termos para continuar." }),
 });
 
