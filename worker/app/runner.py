@@ -39,7 +39,7 @@ def _scan_externo(db: Db, job: dict) -> None:
     if not domain or not valid_domain(domain):
         raise ValueError("invalid_domain")
     checks = run_external_scan(domain)
-    summary = build_summary(domain, checks)
+    summary = build_summary(domain, checks, date.today().isoformat())
     db.save_scan_result(
         org_id=job["org_id"],
         assessment_id=job["assessment_id"],

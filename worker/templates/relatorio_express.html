@@ -13,13 +13,13 @@
   h1, h2, h3, .display { font-family: "Archivo", "Segoe UI", Arial, sans-serif; }
   .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; }
   .page:last-child { page-break-after: auto; }
-  .hero { background: var(--n1); color: #fff; padding: 16mm 16mm 14mm; }
+  .hero { background: var(--n1); color: #fff; padding: 12mm 16mm 10mm; }
   .brand { font-family: "Archivo", sans-serif; font-weight: 800; letter-spacing: .08em; font-size: 10pt; color: var(--sky); text-transform: uppercase; }
-  .hero h1 { font-size: 26pt; line-height: 1.1; margin-top: 10mm; }
+  .hero h1 { font-size: 24pt; line-height: 1.1; margin-top: 7mm; }
   .hero .sub { color: var(--sky); margin-top: 3mm; font-size: 11pt; }
-  .meta { display: flex; gap: 10mm; margin-top: 8mm; font-size: 9.5pt; color: var(--ice); }
+  .meta { display: flex; gap: 10mm; margin-top: 6mm; font-size: 9.5pt; color: var(--ice); }
   .meta b { display: block; color: #fff; font-weight: 600; font-size: 11pt; }
-  .body { padding: 11mm 16mm 0; }
+  .body { padding: 8mm 16mm 0; }
   .score-row { display: flex; gap: 9mm; align-items: center; }
   .dial { width: 46mm; height: 46mm; border-radius: 50%; border: 3.2mm solid {{ faixa.cor }}; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
   .dial .n { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 34pt; line-height: 1; color: var(--n1); }
@@ -36,6 +36,12 @@
   .s-parcial { background: #FBEBCF; color: #9A6407; }
   .s-nao_atende, .s-falha { background: #F8DAD6; color: #C0392B; }
   .s-sem_dado { background: var(--line); color: var(--muted); }
+  .counts { display: flex; gap: 2mm; flex-wrap: wrap; margin-top: 7mm; }
+  .counts .chip { font-size: 9.5pt; padding: .8mm 3mm; }
+  .ext td.mean { color: var(--muted); font-size: 9pt; }
+  .next { background: var(--n1); color: #fff; border-radius: 3mm; padding: 5mm 6mm; margin-top: 5mm; }
+  .next h3 { font-size: 12pt; color: var(--sky); }
+  .next p { font-size: 10pt; margin-top: 1.5mm; color: var(--ice); }
   .note { margin-top: 4mm; font-size: 9pt; color: var(--muted); }
   .p2 { padding: 12mm 16mm 0; }
   .p2 h2:first-child { margin-top: 0; }
@@ -73,15 +79,23 @@
       </div>
     </div>
 
+    <div class="counts">
+      <span class="chip s-atende">{{ resumo.atende }} atendem</span>
+      <span class="chip s-parcial">{{ resumo.parcial }} parciais</span>
+      <span class="chip s-nao_atende">{{ resumo.nao_atende }} não atendem</span>
+      <span class="chip s-sem_dado">{{ resumo.sem_dado }} sem dado</span>
+    </div>
+    <p class="note">Os 12 controles vêm das respostas declaradas pela empresa (selo Autoavaliado). Nenhuma evidência foi revisada pela equipe DataDops neste relatório.</p>
+
     <h2>Checagem pública do e-mail e do site</h2>
     {% if externo %}
-    <table>
-      <tr><th>Checagem</th><th>Resultado</th></tr>
+    <table class="ext">
+      <tr><th>Checagem</th><th>Resultado</th><th>O que significa</th></tr>
       {% for c in externo.checks %}
-      <tr><td>{{ c.nome }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td></tr>
+      <tr><td>{{ c.nome }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td><td class="mean">{{ c.significado }}</td></tr>
       {% endfor %}
     </table>
-    <p class="note">Feita só com consultas públicas (DNS, certificado e cabeçalhos da página inicial) em {{ externo.domain }}.{% if externo.score is not none %} Nota externa: {{ externo.score }}/100 (não altera a nota principal).{% endif %}</p>
+    <p class="note">Consultas públicas (DNS, certificado e cabeçalhos da página inicial) em {{ externo.domain }}{% if externo.data %}, feitas em {{ externo.data }}{% endif %}. Não há varredura de portas nem teste de vulnerabilidades.{% if externo.score is not none %} Nota externa: {{ externo.score }}/100 (não altera a nota principal).{% endif %}</p>
     {% else %}
     <p class="note">A checagem pública do domínio não estava disponível na data da coleta.</p>
     {% endif %}
@@ -92,15 +106,14 @@
 
 <section class="page">
   <div class="p2">
-    <h2>Suas maiores lacunas</h2>
-    {% for g in lacunas %}
+    <h2>Principais riscos identificados</h2>
+    {% for g in riscos %}
     <div class="gap">
       <h3><span>{{ g.nome }}</span><span class="chip s-{{ g.status }}">{{ g.rotulo }}</span></h3>
       <div class="why">{{ g.por_que }}</div>
-      <ol>{% for passo in g.ficha %}<li>{{ passo }}</li>{% endfor %}</ol>
     </div>
     {% else %}
-    <div class="empty">Nenhuma lacuna encontrada nas respostas. Continue verificando todo mês para manter a nota.</div>
+    <div class="empty">Nenhum risco encontrado nas respostas. Continue verificando todo mês para manter a nota.</div>
     {% endfor %}
 
     <h2>Os 12 controles</h2>
@@ -110,6 +123,11 @@
       <tr><td>{{ c.id }} · {{ c.nome }}</td><td>{{ c.area }}</td><td><span class="chip s-{{ c.status }}">{{ c.rotulo }}</span></td></tr>
       {% endfor %}
     </table>
+
+    <div class="next">
+      <h3>Próximo passo: corrigir</h3>
+      <p>O passo a passo para resolver cada ponto, o coletor que confere os computadores da empresa e o acompanhamento mensal ficam dentro do Sentinela. Fale com a DataDops para receber uma proposta sob medida.</p>
+    </div>
   </div>
 
   <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>

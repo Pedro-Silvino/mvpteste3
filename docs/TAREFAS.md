@@ -41,7 +41,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
   - `app/engine/scoring.py` e `mapping.py`: respostas + scans → `control_results` (scan manda mais; divergência marcada) → `score`.
   - Aceite: pytest cobre: tudo sim = 100; tudo não = 0; "não sei" = 0 e `sem_dado`; divergência detectada; pesos do JSON.
 
-- [~] **T07 Relatório Express em PDF** — código e testes prontos; falta Pedro rodar o worker, aprovar o visual e ver o PDF baixar; botão "Quero contratar" pendente (precisa RPC/migração com o ok do Pedro)
+- [~] **T07 Relatório Express em PDF** — visual aprovado em teste; D19 aplicada (sem tutoriais, com oferta). Falta o Pedro aprovar a migração `20261021120000_request_plan.sql` (botão "Quero receber a proposta").
   - `worker/templates/relatorio_express.html` com a identidade DataDops (CLAUDE.md §6). Playwright → PDF.
   - Salva em `reports/{org_id}/{assessment_id}/express.pdf`, grava sha256 em `reports`.
   - `/resultado`: nota, faixa, 3 maiores lacunas, botão baixar (URL assinada 5 min), botão "Quero contratar" (cria alerta para staff).

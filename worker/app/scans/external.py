@@ -71,8 +71,13 @@ def external_score(checks: dict[str, str]) -> int | None:
     return None if total == 0 else round(100 * got / total)
 
 
-def build_summary(domain: str, checks: dict[str, str]) -> dict:
-    return {"domain": domain, "checks": dict(sorted(checks.items())), "score": external_score(checks)}
+def build_summary(domain: str, checks: dict[str, str], collected_on: str | None = None) -> dict:
+    return {
+        "domain": domain,
+        "checks": dict(sorted(checks.items())),
+        "score": external_score(checks),
+        "collected_at": collected_on,  # AAAA-MM-DD, para o relatório dizer quando a checagem foi feita
+    }
 
 
 def canonical_sha256(summary: dict) -> str:
@@ -112,6 +117,14 @@ def _txt(name: str) -> list[str]:
     return ["".join(p.decode() for p in rr.strings) for rr in answers]
 
 
+def _has_mx(domain: str) -> bool:
+    try:
+        _resolver().resolve(domain, "MX")
+        return True
+    except (dns.exception.DNSException, OSError):
+        return False
+
+
 def _dkim_found(domain: str) -> bool:
     r = _resolver()
     for sel in DKIM_SELECTORS:
@@ -124,14 +137,36 @@ def _dkim_found(domain: str) -> bool:
     return False
 
 
-def _public_addresses(domain: str) -> list[str]:
-    """IPs do domínio; vazio se algum não for público (evita apontar o scan para rede interna)."""
+def _public_addresses(host: str) -> list[str]:
+    """IPs do host; vazio se não resolve ou se algum IP não for público (não aponta o scan para rede interna)."""
     try:
-        infos = socket.getaddrinfo(domain, 443, type=socket.SOCK_STREAM)
+        infos = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
     except OSError:
         return []
     ips = list({i[4][0] for i in infos})
     return ips if ips and all(is_public_ip(ip) for ip in ips) else []
+
+
+def _accepts_tls_port(ip: str) -> bool:
+    try:
+        with socket.create_connection((ip, 443), timeout=TIMEOUT):
+            return True
+    except OSError:
+        return False
+
+
+def pick_site_host(domain: str) -> tuple[str, str] | None:
+    """Host do site e um IP público dele. Tenta o domínio e depois www.<domínio>, preferindo quem atende na 443.
+    None = nenhum dos dois resolve para IP público (sem site para checar)."""
+    resolved: list[tuple[str, str]] = []
+    for host in (domain, f"www.{domain}"):
+        ips = _public_addresses(host)
+        if not ips:
+            continue
+        if _accepts_tls_port(ips[0]):
+            return host, ips[0]
+        resolved.append((host, ips[0]))
+    return resolved[0] if resolved else None
 
 
 def _tls_days_left(domain: str, ip: str) -> int | None:
@@ -171,25 +206,30 @@ def run_external_scan(domain: str) -> dict[str, str]:
         except Exception:  # noqa: BLE001 - checagem quebrada vira sem_dado, nunca derruba o scan
             checks[cid] = "sem_dado"
 
-    safe("X01", lambda: eval_spf(_txt(domain)))
-    safe("X02", lambda: eval_dmarc(_txt(f"_dmarc.{domain}")))
-    safe("X03", lambda: eval_dkim(_dkim_found(domain)))
+    if _has_mx(domain):
+        safe("X01", lambda: eval_spf(_txt(domain)))
+        safe("X02", lambda: eval_dmarc(_txt(f"_dmarc.{domain}")))
+        safe("X03", lambda: eval_dkim(_dkim_found(domain)))
+    else:  # domínio que não recebe e-mail: SPF/DMARC/DKIM não se aplicam, não é falha
+        for cid in ("X01", "X02", "X03"):
+            checks[cid] = "sem_dado"
 
-    ips = _public_addresses(domain)
-    if not ips:
+    site = pick_site_host(domain)
+    if site is None:
         for cid in ("X04", "X05", "X06"):
             checks[cid] = "sem_dado"
         return checks
+    host, ip = site
 
-    safe("X04", lambda: eval_tls(_tls_days_left(domain, ips[0])))
+    safe("X04", lambda: eval_tls(_tls_days_left(host, ip)))
 
     def x05() -> str:
-        # http:// deve acabar em https:// (aceita um salto intermediário, ex.: http://x -> http://www.x -> https://www.x)
-        r = _http_get(f"http://{domain}/", max_redirects=3)
+        # http:// deve acabar em https:// (aceita saltos, ex.: http://x -> http://www.x -> https://www.x)
+        r = _http_get(f"http://{host}/", max_redirects=3)
         return eval_https_redirect(str(r.url) if r else None)
 
     def x06() -> str:
-        r = _http_get(f"https://{domain}/")
+        r = _http_get(f"https://{host}/", max_redirects=3)
         return "sem_dado" if r is None else eval_headers(dict(r.headers))
 
     safe("X05", x05)

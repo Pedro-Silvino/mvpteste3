@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-21 — Ajustes pós-teste: precisão do scan, relatório sem tutoriais, oferta (D19)
+- Feito: scan externo mais preciso (domínio sem MX = SPF/DMARC/DKIM "sem dado" em vez de falha; usa `www.` se o domínio puro não tem site; data da coleta no resumo). PDF e `/resultado` mostram nota, contagem por situação, 3 principais riscos e o que cada checagem externa significa, **sem passo a passo**; convite para entrar no Sentinela. Oferta "Quero receber a proposta" (anônimo é levado a `/conta`). Download com nome do arquivo (domínio + data), feedback de "preparando" e mensagem de erro.
+- Arquivos: `worker/app/{report,runner}.py`, `worker/app/scans/external.py`, `worker/templates/relatorio_express.html`, `apps/web/app/resultado/*`, `apps/web/lib/result.ts`, `supabase/migrations/20261021120000_request_plan.sql` (NÃO aplicada).
+- Decisões: D19.
+- Testes: worker pytest 40/40; web Vitest 34/34, lint e typecheck ok. PDF conferido por captura (2 páginas, sem corte). Scan real já tinha sido confirmado no banco (external_score 58).
+- Próximo passo: Pedro aprova a migração `request_plan`; depois aplicar, rodar advisors e `supabase gen types`. Relatórios gerados antes desta mudança continuam no formato antigo (precisam de novo job `processar` para regerar).
+- Bloqueios: ok do Pedro no SQL.
+
 ## 2026-10-19 23:00 — T06 motor de nota + T07 relatório Express (em andamento)
 - Feito: `worker/app/engine/scoring.py` (respostas → `control_results` → nota, faixa, 3 maiores lacunas; "não sei" = sem_dado = 0). Template `worker/templates/relatorio_express.html` (2 páginas A4, identidade DataDops, selo Autoavaliado, rodapé legal) + `app/report.py` (Jinja com autoescape → Playwright PDF). Job `processar`: calcula, gera PDF, sobe em `reports/{org}/{assessment}/express.pdf`, grava SHA-256 em `reports`, grava `control_results` e marca o assessment `concluido`. Web: `/resultado` (nota, faixa, lacunas, atualiza sozinho enquanto processa) e `/resultado/pdf` (URL assinada de 5 min). Também corrigido: salvar resposta (sem upsert) e questionário avançando na hora.
 - Arquivos: `worker/app/{engine/scoring.py,engine/base12.json,report.py,runner.py,db.py}`, `worker/templates/relatorio_express.html`, `apps/web/app/resultado/*`, `apps/web/lib/result.ts`. Deps: playwright 1.49.1 (+ `playwright install chromium`), jinja2 3.1.5.

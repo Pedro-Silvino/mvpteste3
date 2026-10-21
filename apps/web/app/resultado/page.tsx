@@ -1,14 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { bandFor, STATUS_LABEL, topGaps } from "@/lib/result";
+import { bandFor, countByStatus, STATUS_LABEL, topRisks } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
 import { AutoRefresh } from "./auto-refresh";
+import { DownloadButton } from "./download-button";
+import { Offer } from "./offer";
 
 export const metadata = { title: "Resultado — Sentinela" };
 
 const card = "rounded-3xl bg-white p-6 shadow-lg shadow-n3/10 sm:p-9";
+const DOWNLOAD_ERRORS: Record<string, string> = {
+  download: "Não conseguimos preparar o download agora. Tente de novo em instantes.",
+  "sem-relatorio": "O relatório ainda não está disponível. Aguarde alguns instantes.",
+};
+const CHIP: Record<string, string> = {
+  atende: "bg-green-100 text-green-800",
+  parcial: "bg-amber-100 text-amber-800",
+  nao_atende: "bg-red-100 text-red-800",
+  sem_dado: "bg-slate-100 text-slate-600",
+};
 
-export default async function ResultadoPage() {
+export default async function ResultadoPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,7 +30,7 @@ export default async function ResultadoPage() {
 
   const { data: assessment } = await supabase
     .from("assessments")
-    .select("id, status, score, external_score")
+    .select("id, org_id, status, score, external_score")
     .eq("kind", "express")
     .order("created_at", { ascending: false })
     .limit(1)
@@ -38,9 +51,11 @@ export default async function ResultadoPage() {
   if (!ready) {
     return (
       <main className="flex flex-1 items-center justify-center bg-ice px-4 py-12">
-        <AutoRefresh />
+        {assessment.status !== "erro" && <AutoRefresh />}
         <div className={`${card} w-full max-w-xl text-center`}>
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ice border-t-teal" />
+          {assessment.status !== "erro" && (
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-ice border-t-teal" />
+          )}
           <h1 className="mt-6 text-2xl font-bold text-n1">
             {assessment.status === "erro" ? "Algo deu errado" : "Montando o seu relatório…"}
           </h1>
@@ -56,11 +71,18 @@ export default async function ResultadoPage() {
 
   const score = assessment.score as number;
   const band = bandFor(score);
-  const { data: rows } = await supabase
-    .from("control_results")
-    .select("control_id, status")
-    .eq("assessment_id", assessment.id);
-  const gaps = topGaps(rows ?? []);
+  const [{ data: rows }, { data: requests }] = await Promise.all([
+    supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id),
+    supabase
+      .from("alerts")
+      .select("id")
+      .eq("org_id", assessment.org_id)
+      .is("resolved_at", null)
+      .like("message", "Pedido de proposta:%")
+      .limit(1),
+  ]);
+  const counts = countByStatus(rows ?? []);
+  const risks = topRisks(rows ?? []);
 
   return (
     <main className="flex flex-1 justify-center bg-ice px-4 py-8 sm:py-12">
@@ -85,53 +107,61 @@ export default async function ResultadoPage() {
             </span>
           </p>
           <p className="mx-auto mt-4 max-w-md text-sm text-muted">
-            A nota resume quantos dos 12 controles mínimos de segurança a empresa declarou ter. Controles mais
-            importantes valem mais.
+            Resume quantos dos 12 controles mínimos de segurança a empresa declarou ter. Controles mais importantes
+            valem mais.
           </p>
-          <a
-            href="/resultado/pdf"
-            className="mt-6 inline-block rounded-xl bg-teal px-6 py-3.5 font-semibold text-white hover:bg-n3"
-          >
-            Baixar relatório em PDF
-          </a>
+
+          <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold">
+            {(["atende", "parcial", "nao_atende", "sem_dado"] as const).map((s) => (
+              <span key={s} className={`rounded-full px-3 py-1 ${CHIP[s]}`}>
+                {counts[s]} {s === "atende" ? "atendem" : s === "parcial" ? "parciais" : s === "nao_atende" ? "não atendem" : "sem dado"}
+              </span>
+            ))}
+          </div>
+          {assessment.external_score !== null && (
+            <p className="mt-3 text-xs text-muted">
+              Checagem pública do e-mail e do site: {assessment.external_score}/100 (consultas públicas, não altera a nota).
+            </p>
+          )}
+
+          <DownloadButton />
+          {erro && DOWNLOAD_ERRORS[erro] && (
+            <p role="alert" className="mx-auto mt-4 max-w-md rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              {DOWNLOAD_ERRORS[erro]}
+            </p>
+          )}
         </section>
 
-        {gaps.length > 0 && (
+        {risks.length > 0 && (
           <section className={card}>
-            <h2 className="text-xl font-bold text-n1">Por onde começar</h2>
-            <p className="mt-1 text-sm text-muted">As 3 maiores lacunas encontradas.</p>
-            <div className="mt-5 space-y-4">
-              {gaps.map((g) => (
-                <div key={g.id} className="rounded-2xl border border-line border-l-4 border-l-teal p-5">
+            <h2 className="text-xl font-bold text-n1">Principais riscos identificados</h2>
+            <p className="mt-1 text-sm text-muted">Os 3 pontos que mais pesam na sua nota.</p>
+            <div className="mt-5 space-y-3">
+              {risks.map((r) => (
+                <div key={r.id} className="rounded-2xl border border-line border-l-4 border-l-teal p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-bold text-n1">{g.name}</h3>
-                    <span className="shrink-0 rounded-full bg-ice px-3 py-0.5 text-xs font-semibold text-n3">
-                      {STATUS_LABEL[g.status]}
+                    <h3 className="font-bold text-n1">{r.name}</h3>
+                    <span className={`shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold ${CHIP[r.status]}`}>
+                      {STATUS_LABEL[r.status]}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-muted">{g.why}</p>
-                  <ol className="mt-3 list-inside list-decimal space-y-1 text-sm text-ink">
-                    {g.steps.map((s) => (
-                      <li key={s}>{s}</li>
-                    ))}
-                  </ol>
+                  <p className="mt-1 text-sm text-muted">{r.why}</p>
                 </div>
               ))}
             </div>
           </section>
         )}
 
+        <Offer orgId={assessment.org_id} anonymous={!!user.is_anonymous} requested={(requests?.length ?? 0) > 0} />
+
         {user.is_anonymous && (
-          <section className={`${card} text-center`}>
-            <h2 className="text-xl font-bold text-n1">Guarde o seu diagnóstico</h2>
-            <p className="mt-1 text-sm text-muted">Crie e-mail e senha para voltar a este resultado quando quiser.</p>
-            <Link
-              href="/conta"
-              className="mt-4 inline-block rounded-xl border-2 border-teal px-6 py-3 font-semibold text-teal hover:bg-ice"
-            >
-              Salvar meu diagnóstico
+          <p className="px-2 text-center text-sm text-muted">
+            Quer voltar a este resultado depois?{" "}
+            <Link href="/conta" className="font-semibold text-teal underline">
+              Salve o diagnóstico com e-mail e senha
             </Link>
-          </section>
+            .
+          </p>
         )}
 
         <p className="px-2 text-center text-xs text-muted">

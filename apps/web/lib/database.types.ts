@@ -744,6 +744,7 @@ export type Database = {
         Returns: undefined
       }
       submit_assessment: { Args: { p_assessment: string }; Returns: undefined }
+      request_plan: { Args: { p_org: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

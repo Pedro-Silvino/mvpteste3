@@ -62,13 +62,13 @@ def test_score_uses_weights_and_skips_no_data():
 
 
 def test_summary_is_canonical_and_hash_stable():
-    s1 = build_summary("exemplo.com.br", {"X01": "ok", "X02": "falha"})
-    s2 = build_summary("exemplo.com.br", {"X02": "falha", "X01": "ok"})
+    s1 = build_summary("exemplo.com.br", {"X01": "ok", "X02": "falha"}, "2026-10-21")
+    s2 = build_summary("exemplo.com.br", {"X02": "falha", "X01": "ok"}, "2026-10-21")
     assert canonical_sha256(s1) == canonical_sha256(s2)
     assert len(canonical_sha256(s1)) == 64
     assert s1["checks"]["X02"] == "falha"
     # No lists of people, only statuses.
-    assert set(s1) == {"domain", "checks", "score"}
+    assert set(s1) == {"domain", "checks", "score", "collected_at"}
 
 
 def test_valid_domain():
@@ -81,3 +81,29 @@ def test_ssrf_guard():
     for ip in ["127.0.0.1", "10.1.2.3", "192.168.0.5", "169.254.169.254", "172.16.0.1", "::1", "0.0.0.0", "fc00::1"]:
         assert not is_public_ip(ip), ip
     assert is_public_ip("8.8.8.8")
+
+
+def test_no_mx_means_email_checks_do_not_apply(monkeypatch):
+    import app.scans.external as ext
+
+    monkeypatch.setattr(ext, "_has_mx", lambda d: False)
+    monkeypatch.setattr(ext, "pick_site_host", lambda d: None)
+    assert ext.run_external_scan("exemplo.com.br") == {
+        "X01": "sem_dado", "X02": "sem_dado", "X03": "sem_dado",
+        "X04": "sem_dado", "X05": "sem_dado", "X06": "sem_dado",
+    }
+
+
+def test_site_host_falls_back_to_www(monkeypatch):
+    import app.scans.external as ext
+
+    monkeypatch.setattr(ext, "_public_addresses", lambda h: ["8.8.8.8"] if h.startswith("www.") else [])
+    monkeypatch.setattr(ext, "_accepts_tls_port", lambda ip: True)
+    assert ext.pick_site_host("exemplo.com.br") == ("www.exemplo.com.br", "8.8.8.8")
+
+
+def test_site_host_none_when_nothing_resolves_publicly(monkeypatch):
+    import app.scans.external as ext
+
+    monkeypatch.setattr(ext, "_public_addresses", lambda h: [])
+    assert ext.pick_site_host("exemplo.com.br") is None

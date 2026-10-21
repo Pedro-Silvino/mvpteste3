@@ -13,8 +13,15 @@ export const STATUS_LABEL: Record<string, string> = {
   sem_dado: "Sem dado",
 };
 
+export function countByStatus(rows: { status: string }[]) {
+  const out = { atende: 0, parcial: 0, nao_atende: 0, sem_dado: 0 };
+  for (const r of rows) if (r.status in out) out[r.status as keyof typeof out] += 1;
+  return out;
+}
+
 // Same ordering as worker/app/engine/scoring.py: weight desc, severity, id.
-export function topGaps(rows: { control_id: string; status: string }[], n = 3) {
+// Identifies the risk only. The fix steps ("ficha") are the in-product part: never returned here.
+export function topRisks(rows: { control_id: string; status: string }[], n = 3) {
   const byId = new Map(base12.controles.map((c) => [c.id, c]));
   return rows
     .filter((r) => r.status !== "atende" && byId.has(r.control_id))
@@ -27,6 +34,6 @@ export function topGaps(rows: { control_id: string; status: string }[], n = 3) {
     .slice(0, n)
     .map((r) => {
       const c = byId.get(r.control_id)!;
-      return { id: c.id, name: c.nome, why: c.por_que, steps: c.ficha, status: r.status };
+      return { id: c.id, name: c.nome, why: c.por_que, status: r.status };
     });
 }
