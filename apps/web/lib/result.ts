@@ -19,9 +19,9 @@ export function countByStatus(rows: { status: string }[]) {
   return out;
 }
 
-// Same ordering as worker/app/engine/scoring.py: weight desc, severity, id.
-// Identifies the risk only. The fix steps ("ficha") are the in-product part: never returned here.
-export function topRisks(rows: { control_id: string; status: string }[], n = 3) {
+// Every open control with its fix steps. PAID PLANS ONLY: callers must check isPaidPlan() first; the
+// free screens only use countByStatus(). Order matches worker/app/engine/scoring.py: weight desc, severity, id.
+export function openGaps(rows: { control_id: string; status: string }[]) {
   const byId = new Map(base12.controles.map((c) => [c.id, c]));
   return rows
     .filter((r) => r.status !== "atende" && byId.has(r.control_id))
@@ -31,9 +31,8 @@ export function topRisks(rows: { control_id: string; status: string }[], n = 3) 
         SEVERITY[a.status] - SEVERITY[b.status] ||
         a.control_id.localeCompare(b.control_id),
     )
-    .slice(0, n)
     .map((r) => {
       const c = byId.get(r.control_id)!;
-      return { id: c.id, name: c.nome, why: c.por_que, status: r.status };
+      return { id: c.id, name: c.nome, area: c.area, why: c.por_que, steps: c.ficha, status: r.status };
     });
 }

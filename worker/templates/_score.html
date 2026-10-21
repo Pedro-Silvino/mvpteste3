@@ -1,0 +1,14 @@
+<div class="score-row">
+  <div class="dial"><span class="n">{{ nota }}</span><span class="of">de 100</span></div>
+  <div>
+    <span class="band">{{ faixa.rotulo }}</span><span class="seal">Autoavaliado</span>
+    <p>Esta é a sua <b>nota de maturidade</b>: resume quantos dos 12 controles mínimos de segurança a empresa declarou ter. Controles mais importantes valem mais. "Não sei" conta como ponto a descobrir.</p>
+  </div>
+</div>
+<div class="counts">
+  <span class="chip s-atende">{{ resumo.atende }} atendem</span>
+  <span class="chip s-parcial">{{ resumo.parcial }} parciais</span>
+  <span class="chip s-nao_atende">{{ resumo.nao_atende }} não atendem</span>
+  <span class="chip s-sem_dado">{{ resumo.sem_dado }} sem dado</span>
+</div>
+<p class="note">Os 12 controles vêm das respostas declaradas pela empresa (selo Autoavaliado). Nenhuma evidência foi revisada pela equipe DataDops neste relatório.</p>

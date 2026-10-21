@@ -110,13 +110,13 @@ def test_processar_scores_generates_pdf_and_registers_hash(monkeypatch):
     assert process_one(db) is True
     assert db.completed == ("a1", 100)
     assert len(db.control_rows) == 12
-    path, pdf = db.uploads[0]
-    assert path == "o1/a1/express.pdf" and pdf == b"%PDF-fake"
+    assert [p for p, _ in db.uploads] == ["o1/a1/express.pdf", "o1/a1/express-completo.pdf"]
     import hashlib
 
+    digest = hashlib.sha256(b"%PDF-fake").hexdigest()
     assert db.report_rows == [
-        {"org_id": "o1", "assessment_id": "a1", "kind": "express", "storage_path": "o1/a1/express.pdf",
-         "sha256": hashlib.sha256(b"%PDF-fake").hexdigest()}
+        {"org_id": "o1", "assessment_id": "a1", "kind": "express", "storage_path": p, "sha256": digest}
+        for p in ("o1/a1/express.pdf", "o1/a1/express-completo.pdf")
     ]
     assert db.finished == [("j2", "ok", None)]
 

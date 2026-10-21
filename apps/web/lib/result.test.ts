@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandFor, countByStatus, topRisks } from "./result";
+import { bandFor, countByStatus, openGaps } from "./result";
 
 describe("bandFor", () => {
   it("maps score to the catalog bands", () => {
@@ -19,12 +19,12 @@ const rows = [
   { control_id: "C02", status: "atende" },
 ];
 
-describe("topRisks", () => {
-  it("orders by weight, then severity, skips controls that are met", () => {
-    expect(topRisks(rows).map((g) => g.id)).toEqual(["C03", "C06", "C07"]);
+describe("openGaps", () => {
+  it("lists every open control by weight, then severity, and skips the ones that are met", () => {
+    expect(openGaps(rows).map((g) => g.id)).toEqual(["C03", "C06", "C07", "C01"]);
   });
-  it("never exposes the fix steps (they live inside the product)", () => {
-    for (const r of topRisks(rows)) expect(Object.keys(r)).toEqual(["id", "name", "why", "status"]);
+  it("carries the fix steps", () => {
+    expect(openGaps(rows)[0].steps.length).toBeGreaterThan(0);
   });
 });
 

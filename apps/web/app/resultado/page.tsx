@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { bandFor, countByStatus, STATUS_LABEL, topRisks } from "@/lib/result";
+import { currentOrgId } from "@/lib/org";
+import { bandFor, countByStatus } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
 import { AutoRefresh } from "./auto-refresh";
 import { DownloadButton } from "./download-button";
-import { Offer } from "./offer";
 
 export const metadata = { title: "Resultado — Sentinela" };
 
@@ -19,7 +19,10 @@ const CHIP: Record<string, string> = {
   nao_atende: "bg-red-100 text-red-800",
   sem_dado: "bg-slate-100 text-slate-600",
 };
+const CHIP_LABEL = { atende: "atendem", parcial: "parciais", nao_atende: "não atendem", sem_dado: "sem dado" } as const;
 
+// First screen after the questionnaire. Free level on purpose: score and totals only. WHICH controls are
+// open and HOW to fix them live in the dashboard, behind a paid plan (D19).
 export default async function ResultadoPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
   const supabase = await createClient();
@@ -28,9 +31,12 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
   } = await supabase.auth.getUser();
   if (!user) redirect("/comecar");
 
+  const orgId = await currentOrgId(supabase, user.id);
+  if (!orgId) redirect("/comecar");
   const { data: assessment } = await supabase
     .from("assessments")
     .select("id, org_id, status, score, external_score")
+    .eq("org_id", orgId)
     .eq("kind", "express")
     .order("created_at", { ascending: false })
     .limit(1)
@@ -71,18 +77,8 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
 
   const score = assessment.score as number;
   const band = bandFor(score);
-  const [{ data: rows }, { data: requests }] = await Promise.all([
-    supabase.from("control_results").select("control_id, status").eq("assessment_id", assessment.id),
-    supabase
-      .from("alerts")
-      .select("id")
-      .eq("org_id", assessment.org_id)
-      .is("resolved_at", null)
-      .like("message", "Pedido de proposta:%")
-      .limit(1),
-  ]);
+  const { data: rows } = await supabase.from("control_results").select("status").eq("assessment_id", assessment.id);
   const counts = countByStatus(rows ?? []);
-  const risks = topRisks(rows ?? []);
 
   return (
     <main className="flex flex-1 justify-center bg-ice px-4 py-8 sm:py-12">
@@ -112,9 +108,9 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
           </p>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold">
-            {(["atende", "parcial", "nao_atende", "sem_dado"] as const).map((s) => (
+            {(Object.keys(CHIP_LABEL) as (keyof typeof CHIP_LABEL)[]).map((s) => (
               <span key={s} className={`rounded-full px-3 py-1 ${CHIP[s]}`}>
-                {counts[s]} {s === "atende" ? "atendem" : s === "parcial" ? "parciais" : s === "nao_atende" ? "não atendem" : "sem dado"}
+                {counts[s]} {CHIP_LABEL[s]}
               </span>
             ))}
           </div>
@@ -132,27 +128,19 @@ export default async function ResultadoPage({ searchParams }: { searchParams: Pr
           )}
         </section>
 
-        {risks.length > 0 && (
-          <section className={card}>
-            <h2 className="text-xl font-bold text-n1">Principais riscos identificados</h2>
-            <p className="mt-1 text-sm text-muted">Os 3 pontos que mais pesam na sua nota.</p>
-            <div className="mt-5 space-y-3">
-              {risks.map((r) => (
-                <div key={r.id} className="rounded-2xl border border-line border-l-4 border-l-teal p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-bold text-n1">{r.name}</h3>
-                    <span className={`shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold ${CHIP[r.status]}`}>
-                      {STATUS_LABEL[r.status]}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted">{r.why}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <Offer orgId={assessment.org_id} anonymous={!!user.is_anonymous} requested={(requests?.length ?? 0) > 0} />
+        <section className="rounded-3xl bg-n1 p-6 text-white shadow-lg shadow-n3/20 sm:p-9">
+          <h2 className="text-2xl font-bold leading-snug">Quais são as lacunas e como resolver?</h2>
+          <p className="mt-2 text-ice">
+            O seu relatório e as suas respostas ficaram guardados no painel. Lá você escolhe um plano para ver as
+            lacunas, uma a uma, com o passo a passo, kits de documentos e orientações.
+          </p>
+          <Link
+            href="/painel"
+            className="mt-6 inline-block rounded-xl bg-teal px-6 py-3.5 font-semibold text-white hover:bg-sky hover:text-n1"
+          >
+            Abrir meu painel
+          </Link>
+        </section>
 
         {user.is_anonymous && (
           <p className="px-2 text-center text-sm text-muted">

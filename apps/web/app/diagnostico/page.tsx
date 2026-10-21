@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { currentOrgId } from "@/lib/org";
 import { buildSteps } from "@/lib/questionnaire";
 import { createClient } from "@/lib/supabase/server";
 import { Questionnaire } from "./questionnaire";
@@ -12,10 +13,12 @@ export default async function DiagnosticoPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/comecar");
 
-  // RLS limits this to the user's own organizations.
+  const orgId = await currentOrgId(supabase, user.id);
+  if (!orgId) redirect("/comecar");
   const { data: assessment } = await supabase
     .from("assessments")
     .select("id, status")
+    .eq("org_id", orgId)
     .eq("kind", "express")
     .order("created_at", { ascending: false })
     .limit(1)

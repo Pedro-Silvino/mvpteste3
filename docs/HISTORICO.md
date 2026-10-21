@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-21 — Painel freemium com 4 planos; lacunas só nos planos pagos (D20)
+- Feito: `/resultado` sem lacunas (nota, faixa, contagem, nota externa, baixar PDF, "Abrir meu painel"). `/painel`: relatório guardado + download, respostas, 4 planos (Grátis, Essencial, Dossiê Prova, 360, sem preço), pedido de plano; plano pago mostra lacunas com "como resolver", kits de documentos e coletor (cartões "em preparação": só descrição, o conteúdo vem na T14/T09–T12). Worker gera 2 PDFs (grátis 1 página, completo 3). Download escolhe o PDF pelo plano. Consultas "mais recente" agora amarradas à empresa do usuário (`lib/org.ts`), para não vazar entre empresas quando houver staff.
+- Arquivos: `worker/templates/{_base,_hero,_score,relatorio_gratuito,relatorio_completo}.html`, `worker/app/{report,runner}.py`, `apps/web/app/{painel,resultado,diagnostico}/*`, `apps/web/lib/{plans,org,result}.ts`, `supabase/migrations/20261021120000_request_plan.sql` (NÃO aplicada).
+- Decisões: D20 (substitui D19).
+- Testes: worker pytest 42/42 (PDF grátis não contém nome de controle nem passo a passo; completo tem; 1 e 3 páginas); web Vitest 38/38, lint e typecheck ok. Páginas do PDF conferidas por captura. Não testado no navegador contra o banco.
+- Próximo passo: Pedro aprova a migração; aplicar, rodar advisors, `supabase gen types`. Para ver o novo formato nos relatórios já existentes é preciso reprocessar (novo job `processar`). Para testar plano pago: a equipe muda `organizations.plan` (SQL aprovado).
+- Bloqueios: ok do Pedro (migração e reprocessamento).
+
 ## 2026-10-21 — Ajustes pós-teste: precisão do scan, relatório sem tutoriais, oferta (D19)
 - Feito: scan externo mais preciso (domínio sem MX = SPF/DMARC/DKIM "sem dado" em vez de falha; usa `www.` se o domínio puro não tem site; data da coleta no resumo). PDF e `/resultado` mostram nota, contagem por situação, 3 principais riscos e o que cada checagem externa significa, **sem passo a passo**; convite para entrar no Sentinela. Oferta "Quero receber a proposta" (anônimo é levado a `/conta`). Download com nome do arquivo (domínio + data), feedback de "preparando" e mensagem de erro.
 - Arquivos: `worker/app/{report,runner}.py`, `worker/app/scans/external.py`, `worker/templates/relatorio_express.html`, `apps/web/app/resultado/*`, `apps/web/lib/result.ts`, `supabase/migrations/20261021120000_request_plan.sql` (NÃO aplicada).

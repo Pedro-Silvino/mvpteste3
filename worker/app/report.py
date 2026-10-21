@@ -40,21 +40,25 @@ _env = Environment(
 )
 
 
-def build_context(empresa: str, results: list[dict], external: dict | None, today: date) -> dict:
+def build_context(empresa: str, results: list[dict], external: dict | None, today: date, completo: bool = False) -> dict:
+    """completo=False (plano grátis): só nota, contagem e nota externa. As lacunas, o passo a passo e a lista
+    de controles NÃO entram no contexto, então não há como vazarem para o PDF gratuito."""
     nota = score(results)
-    ctx = {
+    ctx: dict = {
+        "completo": completo,
         "empresa": empresa,
         "data": today.strftime("%d/%m/%Y"),
         "nota": nota,
         "faixa": band(nota),
         "rodape": FOOTER_REST,
-        # Só identifica o risco. O passo a passo para corrigir fica dentro do Sentinela (oferta pós-diagnóstico).
-        "riscos": [
-            {"nome": g["nome"], "por_que": g["por_que"], "status": g["status"], "rotulo": STATUS_LABEL[g["status"]]}
-            for g in top_gaps(results)
-        ],
         "resumo": {s: sum(1 for r in results if r["status"] == s) for s in ("atende", "parcial", "nao_atende", "sem_dado")},
-        "controles": [
+        "externo": None,
+    }
+    if completo:
+        ctx["lacunas"] = [
+            {**g, "rotulo": STATUS_LABEL[g["status"]]} for g in top_gaps(results, n=len(results))
+        ]
+        ctx["controles"] = [
             {
                 "id": r["control_id"],
                 "nome": CONTROLS[r["control_id"]]["nome"],
@@ -63,28 +67,27 @@ def build_context(empresa: str, results: list[dict], external: dict | None, toda
                 "rotulo": STATUS_LABEL[r["status"]],
             }
             for r in results
-        ],
-        "externo": None,
-    }
+        ]
     if external:
-        checks = []
-        for c in CATALOG["checagens_externas"]:
-            status = external["checks"].get(c["id"], "sem_dado")
-            rotulo = "Atenção" if status == "parcial" else STATUS_LABEL.get(status, "Sem dado")
-            meaning = CHECK_MEANING.get((c["id"], status), NO_DATA_MEANING if status == "sem_dado" else "")
-            checks.append({"nome": c["nome"], "status": status, "rotulo": rotulo, "significado": meaning})
         collected = external.get("collected_at")
         ctx["externo"] = {
             "domain": external["domain"],
             "score": external.get("score"),
             "data": date.fromisoformat(collected).strftime("%d/%m/%Y") if collected else None,
-            "checks": checks,
+            "checks": [],
         }
+        if completo:
+            for c in CATALOG["checagens_externas"]:
+                status = external["checks"].get(c["id"], "sem_dado")
+                rotulo = "Atenção" if status == "parcial" else STATUS_LABEL.get(status, "Sem dado")
+                meaning = CHECK_MEANING.get((c["id"], status), NO_DATA_MEANING if status == "sem_dado" else "")
+                ctx["externo"]["checks"].append({"nome": c["nome"], "status": status, "rotulo": rotulo, "significado": meaning})
     return ctx
 
 
 def render_html(ctx: dict) -> str:
-    return _env.get_template("relatorio_express.html").render(**ctx)
+    name = "relatorio_completo.html" if ctx["completo"] else "relatorio_gratuito.html"
+    return _env.get_template(name).render(**ctx)
 
 
 def render_pdf(html: str) -> bytes:

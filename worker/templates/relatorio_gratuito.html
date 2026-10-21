@@ -1,0 +1,29 @@
+{% extends "_base.html" %}
+{% block pages %}
+<section class="page">
+  {% include "_hero.html" %}
+  <div class="body">
+    {% include "_score.html" %}
+
+    <h2>Checagem pública do e-mail e do site</h2>
+    {% if externo %}
+    <p>Nota externa: <b>{{ externo.score if externo.score is not none else "sem dado" }}{% if externo.score is not none %}/100{% endif %}</b> para {{ externo.domain }}{% if externo.data %}, em {{ externo.data }}{% endif %}.</p>
+    <p class="note">Consultas públicas (DNS, certificado e cabeçalhos da página inicial). Não há varredura de portas nem teste de vulnerabilidades. A nota externa não altera a nota principal.</p>
+    {% else %}
+    <p class="note">A checagem pública do domínio não estava disponível na data da coleta.</p>
+    {% endif %}
+
+    <div class="next">
+      <h3>As lacunas e como resolvê-las estão nos planos</h3>
+      <p>Este é o seu retrato gratuito. Ele fica guardado no painel do Sentinela, junto com as suas respostas. Ao escolher um plano você recebe:</p>
+      <ul>
+        <li>Quais controles estão em lacuna, um a um, e o passo a passo para corrigir cada um</li>
+        <li>Kits de documentos (política de segurança, plano de incidente, designação do responsável) e orientações</li>
+        <li>Coletor que confere os computadores da empresa, acompanhamento mensal e alertas quando algo piora</li>
+      </ul>
+      <p>Acesse o painel e escolha o plano. Proposta sob medida para o tamanho da sua empresa.</p>
+    </div>
+  </div>
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}</footer>
+</section>
+{% endblock %}

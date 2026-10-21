@@ -58,12 +58,19 @@ def _processar(db: Db, job: dict) -> None:
     results = compute_control_results(db.answers(asmt))
     external = db.latest_external_summary(org_id)
     domain = db.org_domain(org_id) or ""
-    html = render_html(build_context(domain, results, external, date.today()))
-    pdf = render_pdf(html)  # gera o PDF antes de gravar qualquer coisa: falhou aqui, nada fica pela metade
-    path = f"{org_id}/{asmt}/express.pdf"
-    db.upload_report(path, pdf)
-    db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
-                       sha256=hashlib.sha256(pdf).hexdigest())
+    # Dois PDFs: o grátis (nota e contagem) e o completo (lacunas + como resolver). O site entrega um ou outro
+    # conforme o plano da empresa. Gera os dois antes de gravar qualquer coisa: falhou aqui, nada fica pela metade.
+    today = date.today()
+    files = {
+        f"{org_id}/{asmt}/express.pdf": render_pdf(render_html(build_context(domain, results, external, today))),
+        f"{org_id}/{asmt}/express-completo.pdf": render_pdf(
+            render_html(build_context(domain, results, external, today, completo=True))
+        ),
+    }
+    for path, pdf in files.items():
+        db.upload_report(path, pdf)
+        db.save_report_row(org_id=org_id, assessment_id=asmt, kind="express", storage_path=path,
+                           sha256=hashlib.sha256(pdf).hexdigest())
     db.save_control_results(asmt, results)
     db.complete_assessment(asmt, score(results))
 
