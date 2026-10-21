@@ -1,3 +1,4 @@
+import { ConfirmButton } from "@/app/_components/confirm-button";
 import { formatDateTime } from "@/lib/assessment-data";
 import { AGENT_SHA256, AGENT_VERSION } from "@/lib/agent-info";
 import { getPainel } from "@/lib/painel-data";
@@ -116,7 +117,12 @@ export default async function AgentePage() {
                         {state === "Ativo" && (
                           <form action={revokeToken}>
                             <input type="hidden" name="tokenId" value={t.id} />
-                            <button className="text-xs font-semibold text-red-700 hover:underline">Revogar</button>
+                            <ConfirmButton
+                              message={`Revogar o token "${t.label}"? Os computadores que usam este token param de enviar o resumo.`}
+                              className="text-xs font-semibold text-red-700 hover:underline"
+                            >
+                              Revogar<span className="sr-only"> o token {t.label}</span>
+                            </ConfirmButton>
                           </form>
                         )}
                       </td>

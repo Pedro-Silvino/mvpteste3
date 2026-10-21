@@ -5,7 +5,7 @@ import { ProcessingScreen } from "../_components/processing-screen";
 import { AutoRefresh } from "../resultado/auto-refresh";
 import { SidebarNav } from "./sidebar-nav";
 
-export const metadata = { title: "Painel — Sentinela" };
+export const metadata = { title: "Painel — Sentinela", robots: { index: false, follow: false } };
 
 export default async function PainelLayout({ children }: { children: ReactNode }) {
   const p = await getPainel();
@@ -17,10 +17,20 @@ export default async function PainelLayout({ children }: { children: ReactNode }
         {!p.failed && <AutoRefresh everyMs={1500} />}
         {p.failed ? (
           <div className="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-lg shadow-n3/10">
-            <h1 className="text-2xl font-bold text-n1">Algo deu errado</h1>
+            <h1 className="text-2xl font-bold text-n1">Não conseguimos gerar o relatório</h1>
             <p className="mt-2 text-muted">
-              Não conseguimos gerar o relatório. A equipe DataDops já foi avisada; tente de novo em alguns minutos.
+              As suas respostas estão salvas. Fale com a equipe DataDops e informe o domínio{" "}
+              <b className="text-n1">{p.org.domain ?? p.org.name}</b> para reprocessarmos o diagnóstico.
             </p>
+            {p.user.anonymous && (
+              <p className="mt-4 text-sm text-muted">
+                Para não perder o acesso,{" "}
+                <a href="/conta" className="link">
+                  salve a sua conta com e-mail e senha
+                </a>
+                .
+              </p>
+            )}
           </div>
         ) : (
           <ProcessingScreen />

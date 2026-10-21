@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildSteps, firstUnansweredIndex, isValidAnswer } from "./questionnaire";
+import { buildSteps, firstUnansweredIndex, firstUnsavedIndex, isValidAnswer } from "./questionnaire";
 
 describe("catalog copy", () => {
   it("apps/web/lib/base12.json is identical to docs/BASE12.json", () => {
@@ -50,5 +50,16 @@ describe("firstUnansweredIndex", () => {
     expect(firstUnansweredIndex(steps, { Q_INCIDENTE: "nao", Q_TI: "ninguem" })).toBe(2);
     const all = Object.fromEntries(steps.map((s) => [s.id, s.options[0].value]));
     expect(firstUnansweredIndex(steps, all)).toBe(steps.length);
+  });
+});
+
+// Audit P06: an answer whose save failed must block the submit, not silently become "sem dado".
+describe("firstUnsavedIndex", () => {
+  const steps = buildSteps();
+  it("is -1 when every save worked", () => {
+    expect(firstUnsavedIndex(steps, new Set())).toBe(-1);
+  });
+  it("points to the earliest step whose save failed", () => {
+    expect(firstUnsavedIndex(steps, new Set([steps[5].id, steps[2].id]))).toBe(2);
   });
 });

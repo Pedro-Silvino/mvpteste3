@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireStaff } from "@/lib/staff";
 
-export const metadata = { title: "Staff — Sentinela" };
+export const metadata = { title: "Staff — Sentinela", robots: { index: false, follow: false } };
 
 export default async function StaffLayout({ children }: { children: ReactNode }) {
   await requireStaff();

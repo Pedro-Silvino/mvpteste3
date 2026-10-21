@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ForgotForm } from "./forgot-form";
 
 export const metadata = { title: "Recuperar senha — Sentinela" };
@@ -9,6 +10,11 @@ export default function EsqueciSenhaPage() {
         <h1 className="text-2xl font-bold text-n1">Recuperar senha</h1>
         <p className="mt-2 text-muted">Enviamos um link para você criar uma nova senha.</p>
         <ForgotForm />
+        <p className="mt-6 text-center text-sm">
+          <Link href="/entrar" className="link">
+            Voltar para entrar
+          </Link>
+        </p>
       </div>
     </main>
   );

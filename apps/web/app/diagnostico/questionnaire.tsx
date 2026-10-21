@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { firstUnansweredIndex, type Step } from "@/lib/questionnaire";
+import { firstUnansweredIndex, firstUnsavedIndex, type Step } from "@/lib/questionnaire";
 import { saveAnswer, submitAssessment } from "./actions";
 
 export function Questionnaire({
@@ -20,6 +20,8 @@ export function Questionnaire({
   // Saves run one after another in the background, so the next question opens instantly
   // and the final submit only goes after every answer is stored.
   const queue = useRef<Promise<boolean>>(Promise.resolve(true));
+  // Questions whose latest save failed. The submit only goes when this is empty.
+  const failed = useRef(new Set<string>());
 
   const step = steps[index];
   const isLast = index === steps.length - 1;
@@ -33,7 +35,9 @@ export function Questionnaire({
     const questionId = step.id;
     queue.current = queue.current.then(async () => {
       const saved = await saveAnswer({ assessmentId, questionId, value });
-      if (!saved.ok) {
+      if (saved.ok) failed.current.delete(questionId);
+      else {
+        failed.current.add(questionId);
         setError("Não conseguimos salvar uma resposta. Confira a conexão e responda de novo.");
         setAnswers((a) => {
           const rest = { ...a };
@@ -49,9 +53,12 @@ export function Questionnaire({
       return;
     }
     setSending(true);
-    void queue.current.then(async (ok) => {
-      if (!ok) {
+    void queue.current.then(async () => {
+      const unsaved = firstUnsavedIndex(steps, failed.current);
+      if (unsaved !== -1) {
         setSending(false);
+        setIndex(unsaved);
+        setError("Esta resposta não foi salva. Responda de novo para enviar o diagnóstico.");
         return;
       }
       const sent = await submitAssessment(assessmentId);
@@ -73,6 +80,7 @@ export function Questionnaire({
       <div
         className="h-1.5 overflow-hidden rounded-full bg-white"
         role="progressbar"
+        aria-label="Progresso do diagnóstico"
         aria-valuenow={progress}
         aria-valuemin={0}
         aria-valuemax={100}

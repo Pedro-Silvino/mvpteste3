@@ -28,11 +28,20 @@ export default async function SosPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="SOS" subtitle="Aconteceu algo grave? Abra um chamado e a equipe DataDops é avisada na hora." />
+      <PageHeader title="SOS" subtitle="Aconteceu algo grave? Abra um chamado: ele aparece na hora para a equipe DataDops." />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="border-red-200">
           <h2 className="text-lg font-bold text-n1">Abrir chamado</h2>
+          {p.user.anonymous && (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              A sua conta ainda não tem e-mail, então a equipe não tem como responder.{" "}
+              <a href="/conta" className="font-semibold underline">
+                Salve a conta com e-mail e senha
+              </a>{" "}
+              e depois abra o chamado.
+            </p>
+          )}
           <div className="mt-4">
             <SosForm orgId={p.org.id} />
           </div>

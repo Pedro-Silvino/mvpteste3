@@ -13,7 +13,7 @@ export function Uploader({ orgId, controls }: { orgId: string; controls: { id: s
 
   async function send() {
     const file = fileRef.current?.files?.[0];
-    if (!file) return;
+    if (!file) return fail("Escolha um arquivo para enviar.");
     if (file.size > MAX_BYTES) return fail("O arquivo precisa ter até 10 MB.");
     if (!(ALLOWED_MIME as readonly string[]).includes(file.type)) return fail("Envie PDF, PNG ou JPG.");
 

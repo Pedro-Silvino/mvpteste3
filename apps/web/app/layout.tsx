@@ -5,9 +5,12 @@ import "./globals.css";
 const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"] });
 const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"] });
 
+const description = "Diagnóstico de segurança para pequenas e médias empresas: nota de maturidade e checagem pública do site e do e-mail.";
+
 export const metadata: Metadata = {
   title: "Sentinela — DataDops",
-  description: "Diagnóstico de segurança para pequenas e médias empresas.",
+  description,
+  openGraph: { title: "Sentinela — DataDops", description, locale: "pt_BR", type: "website", siteName: "Sentinela" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

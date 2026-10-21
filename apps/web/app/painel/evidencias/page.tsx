@@ -71,7 +71,7 @@ export default async function EvidenciasPage() {
                         <td className="py-3 pr-3 text-muted">{formatDateTime(f.created_at)}</td>
                         <td className="py-3 pr-3 font-mono text-xs text-muted" title={f.sha256}>{f.sha256.slice(0, 12)}…</td>
                         <td className="py-3 text-right">
-                          <a href={`/painel/evidencias/arquivo?id=${f.id}`} className="text-xs font-semibold text-teal-strong hover:underline">Baixar</a>
+                          <a href={`/painel/evidencias/arquivo?id=${f.id}`} aria-label={`Baixar ${f.file_name}`} className="text-xs font-semibold text-teal-strong hover:underline">Baixar</a>
                         </td>
                       </tr>
                     ))}

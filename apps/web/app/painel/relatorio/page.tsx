@@ -99,7 +99,7 @@ export default async function RelatorioPage({ searchParams }: { searchParams: Pr
                   <p className="font-semibold text-n1">{KIND_LABEL(h.kind, h.storage_path)}</p>
                   <p className="text-xs text-muted">{formatDateTime(h.created_at)}</p>
                 </div>
-                <a href={`/painel/relatorio/arquivo?id=${h.id}`} className="text-xs font-semibold text-teal-strong hover:underline">
+                <a href={`/painel/relatorio/arquivo?id=${h.id}`} aria-label={`Baixar PDF: ${KIND_LABEL(h.kind, h.storage_path)}, ${formatDateTime(h.created_at)}`} className="text-xs font-semibold text-teal-strong hover:underline">
                   Baixar PDF
                 </a>
               </li>

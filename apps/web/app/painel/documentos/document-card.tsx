@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { ConfirmButton } from "@/app/_components/confirm-button";
 import { requestDocument, approveDocument, type DocState } from "./actions";
 
 type Doc = { id: string; version: number; approved_at: string | null; created_at: string };
@@ -41,13 +42,18 @@ export function DocumentCard({
             {latest.approved_at ? "Aprovada" : "Aguardando a sua aprovação"}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <a href={`/painel/documentos/arquivo?id=${latest.id}`} className="btn-primary min-h-9 px-3 py-1.5 text-xs">
+            <a href={`/painel/documentos/arquivo?id=${latest.id}`} aria-label={`Baixar PDF: ${name}, versão ${latest.version}`} className="btn-primary min-h-9 px-3 py-1.5 text-xs">
               Baixar PDF
             </a>
             {!latest.approved_at && (
               <form action={approveDocument}>
                 <input type="hidden" name="documentId" value={latest.id} />
-                <button className="rounded-lg border border-teal px-3 py-1.5 text-xs font-semibold text-teal-strong hover:bg-ice">Aprovar</button>
+                <ConfirmButton
+                  message={`Aprovar a versão ${latest.version} de "${name}"? A aprovação fica registrada com a sua conta e a data.`}
+                  className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
+                >
+                  Aprovar
+                </ConfirmButton>
               </form>
             )}
           </div>

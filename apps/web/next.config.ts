@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
-// Conservative security headers for every route. A Content-Security-Policy is deliberately NOT here yet:
-// it needs per-request nonces for Next's inline scripts (tracked as a debt in docs/SEGURANCA.md).
+// Conservative security headers for every route. The CSP below only has directives that don't touch Next's
+// inline scripts; script-src with per-request nonces is still a debt (docs/audit/03-relatorio-final.md).
+const csp = "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

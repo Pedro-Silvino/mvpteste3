@@ -61,3 +61,8 @@ export function firstUnansweredIndex(steps: Step[], answers: Record<string, stri
   const i = steps.findIndex((s) => !answers[s.id]);
   return i === -1 ? steps.length : i;
 }
+
+// Earliest step whose last save failed (-1 = all saved). The submit waits until this is -1.
+export function firstUnsavedIndex(steps: Step[], failed: ReadonlySet<string>): number {
+  return steps.findIndex((s) => failed.has(s.id));
+}

@@ -96,7 +96,7 @@ export function PlanCards({
       </div>
       {requested && (
         <p role="status" className="mt-4 rounded-xl bg-ice px-4 py-3 text-sm text-n1">
-          Pedido do plano <b>{PLANS.find((p) => p.id === requested)?.name}</b> recebido. A equipe DataDops fala com você pelo e-mail
+          Pedido do plano <b>{PLANS.find((p) => p.id === requested)?.name}</b> recebido. A equipe DataDops responde pelo e-mail
           da conta e libera o acesso.
         </p>
       )}

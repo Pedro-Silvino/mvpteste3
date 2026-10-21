@@ -24,7 +24,7 @@ export function SosForm({ orgId }: { orgId: string }) {
       {state.error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{state.error}</p>}
       {state.ok && (
         <p role="status" className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
-          Chamado aberto. A equipe DataDops foi avisada e entra em contato pelo e-mail da conta.
+          Chamado aberto. Ele já aparece para a equipe DataDops, que entra em contato pelo e-mail da conta. Enquanto isso, siga os primeiros passos ao lado.
         </p>
       )}
       <button
