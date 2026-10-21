@@ -182,3 +182,15 @@ def test_monthly_job_without_changes_makes_no_alert_and_no_email(monkeypatch):
     process_one(db)
     assert db.alerts == [] and sent == []
     assert db.uploads == ["o1/m1/mensal.pdf"]  # o relatório do mês sai mesmo sem piora
+
+
+def test_monthly_email_escapes_values_in_the_html(monkeypatch):
+    # Audit S09: the e-mail body is HTML; nothing from the database goes in unescaped.
+    patch_io(monkeypatch)
+    bodies = []
+    monkeypatch.setattr("app.runner.send_email", lambda to, subject, html, **kw: bodies.append(html) or True)
+    db = MonthlyDb(prev_rows=rows(C06="atende"))
+    db.cur_answers = {c: "sim" for c in ALL} | {"C06": "nao"}
+    db.org_domain = lambda org_id: 'exemplo.com.br"><img src=x onerror=alert(1)>'
+    process_one(db)
+    assert bodies and "<img" not in bodies[0] and "&lt;img" in bodies[0]

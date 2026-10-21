@@ -1,6 +1,7 @@
 """Loop de jobs: pega um job pendente, executa e grava o resultado."""
 
 import hashlib
+from html import escape
 import logging
 import time
 from datetime import UTC, date, datetime
@@ -175,7 +176,8 @@ def _mensal(db: Db, job: dict) -> None:
     db.complete_assessment(asmt, score(results))
 
     if lines and (to := db.owner_email(org_id)):
-        body = "<p>A verificação mensal do Sentinela encontrou mudanças em " + domain + ":</p><ul>" + "".join(f"<li>{ln}</li>" for ln in lines) + "</ul><p>Veja os detalhes no painel.</p>"
+        items = "".join(f"<li>{escape(ln)}</li>" for ln in lines)
+        body = f"<p>A verificação mensal do Sentinela encontrou mudanças em {escape(domain)}:</p><ul>{items}</ul><p>Veja os detalhes no painel.</p>"
         send_email(to, "Sentinela: algo piorou na verificação do mês", body)
 
 
