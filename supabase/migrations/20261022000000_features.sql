@@ -62,19 +62,31 @@ revoke all on function public.staff_resolve_alert(uuid) from public, anon;
 grant execute on function public.staff_set_plan(uuid, text) to authenticated;
 grant execute on function public.staff_resolve_alert(uuid) to authenticated;
 
+-- Novos tipos de job: 'evidencia' (o worker confere e registra o arquivo) e 'aviso' (e-mail para a equipe).
+alter table public.jobs drop constraint jobs_kind_check;
+alter table public.jobs add constraint jobs_kind_check
+  check (kind in ('scan_externo', 'processar', 'relatorio', 'mensal', 'evidencia', 'aviso'));
+
 -- ---------------------------------------------------------------------
--- 3. SOS: abre o incidente e avisa a equipe (alerta crítico). Qualquer membro da empresa pode abrir.
+-- 3. SOS: abre o incidente e avisa a equipe (alerta crítico + e-mail pelo worker). Qualquer membro pode abrir,
+--    até 3 por empresa por hora (evita uma enxurrada de alertas críticos).
 -- ---------------------------------------------------------------------
 create or replace function public.open_incident(p_org uuid, p_description text)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare v_id uuid;
 begin
   if not public.is_member(p_org) then raise exception 'forbidden'; end if;
+  if (select count(*) from public.incidents where org_id = p_org and created_at > now() - interval '1 hour') >= 3 then
+    raise exception 'rate_limited';
+  end if;
   insert into public.incidents (org_id, opened_by, description)
   values (p_org, (select auth.uid()), trim(p_description))
   returning id into v_id;
   insert into public.alerts (org_id, severity, message)
   values (p_org, 'critico', 'SOS: incidente aberto pelo cliente (chamado ' || left(v_id::text, 8) || ')');
+  -- o e-mail leva só o número do chamado; a descrição fica no /staff (pode ter dado sensível)
+  insert into public.jobs (org_id, kind, payload)
+  values (p_org, 'aviso', jsonb_build_object('tipo', 'sos', 'chamado', left(v_id::text, 8)));
   perform public.log_event(p_org, 'incident.open', v_id::text, '{}'::jsonb);
   return v_id;
 end $$;
@@ -82,7 +94,8 @@ revoke all on function public.open_incident(uuid, text) from public, anon;
 grant execute on function public.open_incident(uuid, text) to authenticated;
 
 -- ---------------------------------------------------------------------
--- 4. Evidência: registro de cada arquivo enviado (o hash é calculado no servidor antes do envio)
+-- 4. Evidência: registro de cada arquivo enviado. Só o worker (service role) grava a linha, depois de ler o
+--    arquivo do bucket, conferir o tipo real e calcular o SHA-256. O cliente nunca informa o hash.
 -- ---------------------------------------------------------------------
 create table public.evidence (
   id           uuid primary key default gen_random_uuid(),
@@ -101,14 +114,45 @@ alter table public.evidence enable row level security;
 
 create policy ev_select on public.evidence for select to authenticated
   using (public.is_member(org_id) or public.is_staff());
--- Só dono/TI de empresa em plano pago, e o arquivo precisa estar na pasta da própria empresa.
-create policy ev_insert on public.evidence for insert to authenticated
-  with check (
-    uploaded_by = (select auth.uid())
-    and public.has_role(org_id, array['owner', 'ti'])
-    and public.org_is_paid(org_id)
-    and storage_path like org_id::text || '/%'
-  );
+-- Sem política de INSERT e sem grant: o cliente não grava a linha (nem com hash inventado).
+revoke insert, update, delete on public.evidence from authenticated;
+
+-- O cliente (dono/TI, plano pago) pede o registro de um arquivo que já subiu para a pasta {org}/{controle}/.
+create or replace function public.request_evidence_registration(p_org uuid, p_control text, p_path text, p_file_name text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.has_role(p_org, array['owner', 'ti']) then raise exception 'forbidden'; end if;
+  if not public.org_is_paid(p_org) then raise exception 'plan_required'; end if;
+  if coalesce(p_control, '') !~ '^C[0-9]{2}$' then raise exception 'invalid_control'; end if;
+  if p_path is null or p_path not like p_org::text || '/' || p_control || '/%'
+     or p_path like '%..%' or position('/' in substr(p_path, char_length(p_org::text || '/' || p_control || '/') + 1)) > 0 then
+    raise exception 'invalid_path';
+  end if;
+  insert into public.jobs (org_id, kind, payload)
+  values (p_org, 'evidencia', jsonb_build_object(
+    'path', p_path, 'control', p_control,
+    'file_name', left(trim(coalesce(p_file_name, '')), 120), 'uploaded_by', (select auth.uid())));
+  perform public.log_event(p_org, 'evidence.request', p_path, '{}'::jsonb);
+end $$;
+revoke all on function public.request_evidence_registration(uuid, text, text, text) from public, anon;
+grant execute on function public.request_evidence_registration(uuid, text, text, text) to authenticated;
+
+-- Diagnóstico que deu erro: dono/TI pede de novo (volta para 'processando' e ganha um job novo).
+create or replace function public.retry_assessment(p_assessment uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+declare a record;
+begin
+  select id, org_id, kind into a from public.assessments where id = p_assessment and status = 'erro';
+  if a.id is null or not public.has_role(a.org_id, array['owner', 'ti']) then raise exception 'forbidden'; end if;
+  update public.assessments set status = 'processando' where id = a.id;
+  insert into public.jobs (org_id, assessment_id, kind, payload)
+  values (a.org_id, a.id,
+          case when a.kind = 'mensal' then 'mensal' else 'processar' end,
+          case when a.kind = 'completo' then '{"completo": true}'::jsonb else '{}'::jsonb end);
+  perform public.log_event(a.org_id, 'assessment.retry', a.id::text, '{}'::jsonb);
+end $$;
+revoke all on function public.retry_assessment(uuid) from public, anon;
+grant execute on function public.retry_assessment(uuid) to authenticated;
 
 -- O upload no Storage também passa a exigir plano pago.
 drop policy storage_evidence_insert on storage.objects;

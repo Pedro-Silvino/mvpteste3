@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { buildStoragePath, detectMime, MAX_BYTES, pathBelongsTo, safeFileName, sha256Hex } from "./evidence";
+import { buildStoragePath, detectMime, MAX_BYTES, pathBelongsTo, safeFileName } from "./evidence-client";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46]);
@@ -54,9 +53,5 @@ describe("storage path", () => {
 describe("limits and hash", () => {
   it("allows up to 10 MB", () => {
     expect(MAX_BYTES).toBe(10 * 1024 * 1024);
-  });
-  it("sha256Hex matches node crypto", () => {
-    expect(sha256Hex(PDF)).toBe(createHash("sha256").update(PDF).digest("hex"));
-    expect(sha256Hex(PDF)).toMatch(/^[a-f0-9]{64}$/);
   });
 });

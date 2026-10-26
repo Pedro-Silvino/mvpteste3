@@ -1,6 +1,7 @@
 """Loop de jobs: pega um job pendente, executa e grava o resultado."""
 
 import hashlib
+import os
 from html import escape
 import logging
 import time
@@ -10,6 +11,7 @@ from typing import Protocol
 from app.engine.mapping import scan_control_status
 from app.engine.scoring import compute_control_results, score
 from app.engine.diff import diff_results, external_changes
+from app.evidence import MAX_BYTES as EVIDENCE_MAX_BYTES, detect_mime, path_belongs_to
 from app.documents import DOC_FOOTER, build_document_context, render_document_html
 from app.mailer import send_email
 from app.report import build_context, build_monthly_context, render_html, render_monthly_html, render_pdf, warm_up
@@ -49,6 +51,9 @@ class Db(Protocol):
     def next_document_version(self, org_id: str, kind: str) -> int: ...
     def upload_document(self, path: str, pdf: bytes) -> None: ...
     def save_document_row(self, **kw) -> None: ...
+    def download_evidence(self, path: str) -> bytes | None: ...
+    def delete_evidence_object(self, path: str) -> None: ...
+    def save_evidence_row(self, **kw) -> None: ...
 
 
 def _scan_externo(db: Db, job: dict) -> None:
@@ -134,6 +139,42 @@ def _documento(db: Db, job: dict) -> None:
     db.save_document_row(org_id=org_id, kind=kind, version=version, storage_path=path, sha256=hashlib.sha256(pdf).hexdigest())
 
 
+def _evidencia(db: Db, job: dict) -> None:
+    """Arquivo que o cliente subiu: o worker lê do bucket, confere tipo real e tamanho, calcula o SHA-256 e só então
+    grava a linha. Arquivo inválido é apagado do bucket (não fica órfão)."""
+    org_id = job["org_id"]
+    p = job.get("payload") or {}
+    path, control = p.get("path") or "", p.get("control") or ""
+    if not path_belongs_to(path, org_id, control):
+        raise ValueError("invalid_path")
+    data = db.download_evidence(path)
+    if data is None:
+        raise ValueError("file_not_found")
+    mime = detect_mime(data)
+    if not data or len(data) > EVIDENCE_MAX_BYTES or mime is None:
+        db.delete_evidence_object(path)
+        raise ValueError("invalid_file")
+    db.save_evidence_row(
+        org_id=org_id, control_id=control, storage_path=path,
+        file_name=(p.get("file_name") or "arquivo")[:120], mime=mime, size_bytes=len(data),
+        sha256=hashlib.sha256(data).hexdigest(), uploaded_by=p.get("uploaded_by"),
+    )
+
+
+def _aviso(db: Db, job: dict) -> None:
+    """SOS aberto: e-mail para a equipe com o domínio e o número do chamado (a descrição fica só no /staff)."""
+    p = job.get("payload") or {}
+    to = os.environ.get("STAFF_ALERT_EMAIL")
+    if p.get("tipo") != "sos" or not to:
+        return  # o alerta já está no /staff; o e-mail é um extra
+    domain = db.org_domain(job["org_id"]) or "empresa sem domínio"
+    chamado = escape(str(p.get("chamado", "")))
+    send_email(
+        to, f"SOS Sentinela: {domain}",
+        f"<p>Chamado SOS <b>{chamado}</b> aberto por {escape(domain)}.</p><p>Detalhes no /staff do Sentinela.</p>",
+    )
+
+
 _LABEL = {"atende": "Atende", "parcial": "Parcial", "nao_atende": "Não atende", "sem_dado": "Sem dado"}
 
 
@@ -205,6 +246,10 @@ def process_one(db: Db) -> bool:
             _documento(db, job)
         elif job["kind"] == "mensal":
             _mensal(db, job)
+        elif job["kind"] == "evidencia":
+            _evidencia(db, job)
+        elif job["kind"] == "aviso":
+            _aviso(db, job)
         else:  # relatorio / mensal chegam nas tarefas T20+; devolve para a fila
             db.finish_job(job["id"], "pendente", "unsupported_kind")
             return True

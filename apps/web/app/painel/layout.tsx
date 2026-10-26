@@ -3,6 +3,7 @@ import { getPainel } from "@/lib/painel-data";
 import { planName } from "@/lib/plans";
 import { ProcessingScreen } from "../_components/processing-screen";
 import { AutoRefresh } from "../resultado/auto-refresh";
+import { retryAssessment } from "./actions";
 import { SidebarNav } from "./sidebar-nav";
 
 export const metadata = { title: "Painel — Sentinela", robots: { index: false, follow: false } };
@@ -18,9 +19,14 @@ export default async function PainelLayout({ children }: { children: ReactNode }
         {p.failed ? (
           <div className="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-lg shadow-n3/10">
             <h1 className="text-2xl font-bold text-n1">Não conseguimos gerar o relatório</h1>
-            <p className="mt-2 text-muted">
-              As suas respostas estão salvas. Fale com a equipe DataDops e informe o domínio{" "}
-              <b className="text-n1">{p.org.domain ?? p.org.name}</b> para reprocessarmos o diagnóstico.
+            <p className="mt-2 text-muted">As suas respostas estão salvas. Peça de novo; costuma resolver em segundos.</p>
+            <form action={retryAssessment} className="mt-6">
+              <input type="hidden" name="assessmentId" value={p.assessment.id} />
+              <button className="btn-primary px-6">Tentar de novo</button>
+            </form>
+            <p className="mt-4 text-sm text-muted">
+              Se continuar, fale com a equipe DataDops e informe o domínio{" "}
+              <b className="text-n1">{p.org.domain ?? p.org.name}</b>.
             </p>
             {p.user.anonymous && (
               <p className="mt-4 text-sm text-muted">

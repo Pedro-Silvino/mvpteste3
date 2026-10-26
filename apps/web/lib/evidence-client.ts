@@ -1,4 +1,4 @@
-// Browser-safe part (no Node APIs). The SHA-256 lives in evidence.ts, server only.
+// Shared by the browser and the server action. The SHA-256 is computed by the worker (worker/app/evidence.py).
 export const MAX_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_MIME = ["application/pdf", "image/png", "image/jpeg"] as const;
 export type EvidenceMime = (typeof ALLOWED_MIME)[number];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIRST_STEPS, incidentSchema } from "./incident";
+import { FIRST_STEPS, incidentSchema, incidentErrorMessage } from "./incident";
 
 describe("incidentSchema", () => {
   it("accepts a short description and trims it", () => {
@@ -20,5 +20,13 @@ describe("FIRST_STEPS", () => {
   it("never promises an outcome (legal text rules)", () => {
     const text = FIRST_STEPS.join(" ").toLowerCase();
     for (const banned of ["garante", "100%", "risco zero", "blindagem", "indenização"]) expect(text).not.toContain(banned);
+  });
+});
+
+describe("incidentErrorMessage", () => {
+  it("explains the hourly limit and keeps every other error generic", () => {
+    expect(incidentErrorMessage("rate_limited")).toMatch(/3 chamados/);
+    expect(incidentErrorMessage("forbidden")).toBe("Não conseguimos abrir o chamado agora. Tente de novo em instantes.");
+    expect(incidentErrorMessage(undefined)).toBe("Não conseguimos abrir o chamado agora. Tente de novo em instantes.");
   });
 });

@@ -761,6 +761,11 @@ export type Database = {
       open_incident: { Args: { p_description: string; p_org: string }; Returns: string }
       org_is_paid: { Args: { p_org: string }; Returns: boolean }
       request_document: { Args: { p_kind: string; p_org: string; p_params: Json }; Returns: undefined }
+      request_evidence_registration: {
+        Args: { p_control: string; p_file_name: string; p_org: string; p_path: string }
+        Returns: undefined
+      }
+      retry_assessment: { Args: { p_assessment: string }; Returns: undefined }
       staff_resolve_alert: { Args: { p_alert: string }; Returns: undefined }
       staff_set_plan: { Args: { p_org: string; p_plan: string }; Returns: undefined }
       update_organization_profile: {

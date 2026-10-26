@@ -42,7 +42,7 @@ class SupabaseDb:
     def claim_job(self) -> dict | None:
         r = self.client.get(
             "/jobs",
-            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar,relatorio,mensal)", "order": "created_at", "limit": 1},
+            params={"status": "eq.pendente", "kind": "in.(scan_externo,processar,relatorio,mensal,evidencia,aviso)", "order": "created_at", "limit": 1},
         )
         r.raise_for_status()
         rows = r.json()
@@ -147,6 +147,26 @@ class SupabaseDb:
 
     def save_document_row(self, **kw) -> None:
         self.client.post("/documents", json=kw).raise_for_status()
+
+    # ---- evidência (o cliente sobe o arquivo; o worker confere e registra)
+    def download_evidence(self, path: str, limit: int = 10 * 1024 * 1024) -> bytes | None:
+        """Lê no máximo `limit` + 1 bloco: arquivo maior é recusado sem carregar tudo na memória."""
+        with self.storage.stream("GET", f"/object/evidence/{path}") as r:
+            if r.status_code in (400, 404):
+                return None
+            r.raise_for_status()
+            data = bytearray()
+            for chunk in r.iter_bytes():
+                data.extend(chunk)
+                if len(data) > limit:
+                    break
+            return bytes(data)
+
+    def delete_evidence_object(self, path: str) -> None:
+        self.storage.delete(f"/object/evidence/{path}").raise_for_status()
+
+    def save_evidence_row(self, **kw) -> None:
+        self.client.post("/evidence", json=kw).raise_for_status()
 
     # ---- agente (coletor)
     def find_agent_token(self, token_hash: str) -> dict | None:

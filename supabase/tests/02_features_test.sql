@@ -48,6 +48,14 @@ select public.t_passes('T33 SOS abre incidente', format($q$select public.open_in
 select public.t_fails('T34 SOS com descrição curta', format($q$select public.open_incident(%L,'oi')$q$, :'org_a'));
 reset role;
 select public.t_eq('T35 SOS gerou alerta crítico', (select count(*)::text from public.alerts where severity = 'critico' and message like 'SOS:%'), '1');
+select public.t_eq('T67 SOS gerou aviso por e-mail para a equipe (job)', (select count(*)::text from public.jobs where kind = 'aviso' and payload ->> 'tipo' = 'sos'), '1');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000a","is_anonymous":false}';
+select public.t_passes('T68 segundo SOS na mesma hora', format($q$select public.open_incident(%L,'Segundo chamado de teste')$q$, :'org_a'));
+select public.t_passes('T69 terceiro SOS na mesma hora', format($q$select public.open_incident(%L,'Terceiro chamado de teste')$q$, :'org_a'));
+select public.t_fails('T70 quarto SOS na mesma hora é recusado', format($q$select public.open_incident(%L,'Quarto chamado de teste')$q$, :'org_a'));
+reset role;
 
 -- ===== A com sessão anônima
 set role authenticated;
@@ -83,12 +91,24 @@ set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000a","is_anonymous":false}';
 select public.t_passes('T47 upload no Storage liberado no plano pago', format($q$insert into storage.objects(bucket_id,name) values ('evidence', %L||'/backup.png')$q$, :'org_a'));
-select public.t_passes('T48 registro de evidência', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/backup.png','backup.png','image/png',2048,repeat('b',64))$q$, :'org_a', :'org_a'));
+select public.t_fails('T48 cliente não grava evidência direto, nem no plano pago (o hash é do worker)', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/C06/backup.png','backup.png','image/png',2048,repeat('b',64))$q$, :'org_a', :'org_a'));
+select public.t_passes('T71 pede o registro da evidência', format($q$select public.request_evidence_registration(%L,'C06',%L||'/C06/abc-backup.png','backup.png')$q$, :'org_a', :'org_a'));
+select public.t_eq('T72 virou um job para o worker', (select count(*)::text from public.jobs where kind = 'evidencia' and payload ->> 'path' like '%/C06/abc-backup.png'), '1');
+select public.t_fails('T73 caminho fora da pasta do controle', format($q$select public.request_evidence_registration(%L,'C06',%L||'/C07/x.png','x.png')$q$, :'org_a', :'org_a'));
+select public.t_fails('T74 caminho com ..', format($q$select public.request_evidence_registration(%L,'C06',%L||'/C06/../x.png','x.png')$q$, :'org_a', :'org_a'));
+select public.t_fails('T75 controle inválido', format($q$select public.request_evidence_registration(%L,'X99',%L||'/X99/x.png','x.png')$q$, :'org_a', :'org_a'));
+reset role;
+-- o worker (service role) grava a linha com o hash que ele calculou
+insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256,uploaded_by)
+values (:'org_a','C06',:'org_a'||'/C06/abc-backup.png','backup.png','image/png',2048,repeat('b',64),:'ua');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000a","is_anonymous":false}';
 select public.t_fails('T49 evidência apontando para pasta de outra empresa', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06','00000000-0000-0000-0000-0000000000ff/x.png','x.png','image/png',10,repeat('c',64))$q$, :'org_a'));
 select public.t_fails('T50 tipo de arquivo não permitido', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/x.exe','x.exe','application/x-msdownload',10,repeat('d',64))$q$, :'org_a', :'org_a'));
 select public.t_fails('T51 arquivo maior que 10 MB', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/g.pdf','g.pdf','application/pdf',10485761,repeat('e',64))$q$, :'org_a', :'org_a'));
 select public.t_fails('T52 hash inválido', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/h.pdf','h.pdf','application/pdf',10,'xyz')$q$, :'org_a', :'org_a'));
-select public.t_passes('T53 delete sem política não dá erro, só apaga 0 linhas', 'delete from public.evidence');
+select public.t_fails('T53 cliente não apaga evidência (sem permissão)', 'delete from public.evidence');
 select public.t_eq('T54 evidência continua lá', (select count(*)::text from public.evidence), '1');
 
 select public.t_passes('T55 pedido de política', format($q$select public.request_document(%L,'politica','{}'::jsonb)$q$, :'org_a'));
@@ -105,6 +125,24 @@ set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
 set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000b","is_anonymous":false}';
 select public.t_fails('T61 B não pede documento da A', format($q$select public.request_document(%L,'politica','{}'::jsonb)$q$, :'org_a'));
 select public.t_fails('T62 B não registra evidência na A', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/b.png','b.png','image/png',10,repeat('f',64))$q$, :'org_a', :'org_a'));
+select public.t_fails('T76 B não pede registro de evidência na A', format($q$select public.request_evidence_registration(%L,'C06',%L||'/C06/b.png','b.png')$q$, :'org_a', :'org_a'));
+select public.t_fails('T77 B não reprocessa diagnóstico da A', format($q$select public.retry_assessment(%L)$q$, (select id from public.assessments where org_id = :'org_a' limit 1)));
+reset role;
+
+-- ===== Diagnóstico que deu erro: o dono pede de novo
+update public.assessments set status = 'erro' where org_id = :'org_a' and kind = 'express';
+update public.jobs set status = 'erro' where org_id = :'org_a' and kind = 'processar';
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000a","is_anonymous":true}';
+select public.t_passes('T78 dono (mesmo anônimo) reprocessa diagnóstico com erro', format($q$select public.retry_assessment(%L)$q$, (select id from public.assessments where org_id = :'org_a' and kind = 'express' limit 1)));
+reset role;
+select public.t_eq('T79 diagnóstico voltou para processando', (select status from public.assessments where org_id = :'org_a' and kind = 'express' limit 1), 'processando');
+select public.t_eq('T80 um job processar novo', (select count(*)::text from public.jobs where org_id = :'org_a' and kind = 'processar' and status = 'pendente'), '1');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+set request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000a","is_anonymous":false}';
+select public.t_fails('T81 só reprocessa o que está com erro', format($q$select public.retry_assessment(%L)$q$, (select id from public.assessments where org_id = :'org_a' and kind = 'express' limit 1)));
 reset role;
 
 -- ===== Anônimo (role anon) não chama nenhuma função nova
@@ -113,4 +151,6 @@ select public.t_fails('T63 anon sem update_organization_profile', format($q$sele
 select public.t_fails('T64 anon sem staff_set_plan', format($q$select public.staff_set_plan(%L,'360')$q$, :'org_a'));
 select public.t_fails('T65 anon sem open_incident', format($q$select public.open_incident(%L,'tentativa anonima')$q$, :'org_a'));
 select public.t_fails('T66 anon sem request_document', format($q$select public.request_document(%L,'politica','{}'::jsonb)$q$, :'org_a'));
+select public.t_fails('T82 anon sem request_evidence_registration', format($q$select public.request_evidence_registration(%L,'C06',%L||'/C06/a.png','a.png')$q$, :'org_a', :'org_a'));
+select public.t_fails('T83 anon sem retry_assessment', format($q$select public.retry_assessment(%L)$q$, (select id from public.assessments where org_id = :'org_a' limit 1)));
 reset role;

@@ -18,3 +18,13 @@ export const FIRST_STEPS = [
   "Se houver seguro cyber, confira com o corretor o prazo para avisar a seguradora.",
   "Se dados pessoais podem ter vazado, a empresa precisa avaliar a comunicação à ANPD e aos titulares. A equipe ajuda a registrar o que ocorreu.",
 ] as const;
+
+const GENERIC = "Não conseguimos abrir o chamado agora. Tente de novo em instantes.";
+
+// Maps known exceptions from public.open_incident; never echoes database details.
+export function incidentErrorMessage(dbMessage: string | undefined): string {
+  if (dbMessage?.includes("rate_limited")) {
+    return "Você já abriu 3 chamados na última hora. A equipe DataDops já está com eles; aguarde o contato.";
+  }
+  return GENERIC;
+}

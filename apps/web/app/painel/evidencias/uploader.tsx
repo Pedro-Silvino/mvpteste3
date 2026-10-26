@@ -26,7 +26,7 @@ export function Uploader({ orgId, controls }: { orgId: string; controls: { id: s
     if (!r.ok) return fail(r.error ?? "Não conseguimos registrar o arquivo.");
     if (fileRef.current) fileRef.current.value = "";
     setState("ok");
-    setMessage("Arquivo guardado, com a data e o código de verificação (SHA-256).");
+    setMessage("Arquivo recebido. Em alguns segundos ele aparece na lista, com a data e o código de verificação (SHA-256).");
   }
 
   function fail(msg: string) {
