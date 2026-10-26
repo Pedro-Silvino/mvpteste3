@@ -1,0 +1,171 @@
+{
+ "home@360": {
+  "hscroll": false
+ },
+ "home@768": {
+  "hscroll": false
+ },
+ "home@1280": {
+  "hscroll": false,
+  "checked": 4,
+  "issues": [
+   {
+    "rule": "contraste",
+    "text": "Fazer o diagnóstico gratuito",
+    "ratio": 3.6
+   }
+  ],
+  "focus": [
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   null,
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   null
+  ]
+ },
+ "comecar@360": {
+  "hscroll": false
+ },
+ "comecar@768": {
+  "hscroll": false
+ },
+ "comecar@1280": {
+  "hscroll": false,
+  "checked": 8,
+  "issues": [
+   {
+    "rule": "contraste",
+    "text": "Termos de uso",
+    "ratio": 3.6
+   },
+   {
+    "rule": "contraste",
+    "text": "Aviso de privacidade",
+    "ratio": 3.6
+   },
+   {
+    "rule": "contraste",
+    "text": "Começar diagnóstico",
+    "ratio": 3.6
+   }
+  ],
+  "focus": [
+   {
+    "tag": "INPUT",
+    "outline": false,
+    "shadow": false
+   },
+   {
+    "tag": "INPUT",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   }
+  ]
+ },
+ "entrar@360": {
+  "hscroll": false
+ },
+ "entrar@768": {
+  "hscroll": false
+ },
+ "entrar@1280": {
+  "hscroll": false,
+  "checked": 9,
+  "issues": [
+   {
+    "rule": "contraste",
+    "text": "Mostrar",
+    "ratio": 3.6
+   },
+   {
+    "rule": "contraste",
+    "text": "Entrar",
+    "ratio": 3.6
+   },
+   {
+    "rule": "contraste",
+    "text": "Esqueci minha senha",
+    "ratio": 3.6
+   },
+   {
+    "rule": "contraste",
+    "text": "Fazer o diagnóstico",
+    "ratio": 3.6
+   }
+  ],
+  "focus": [
+   {
+    "tag": "INPUT",
+    "outline": false,
+    "shadow": false
+   },
+   {
+    "tag": "INPUT",
+    "outline": false,
+    "shadow": false
+   },
+   {
+    "tag": "BUTTON",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "BUTTON",
+    "outline": true,
+    "shadow": false
+   }
+  ]
+ },
+ "esqueci-senha@360": {
+  "hscroll": false
+ },
+ "esqueci-senha@768": {
+  "hscroll": false
+ },
+ "esqueci-senha@1280": {
+  "hscroll": false,
+  "checked": 4,
+  "issues": [
+   {
+    "rule": "contraste",
+    "text": "Enviar link",
+    "ratio": 3.6
+   }
+  ],
+  "focus": [
+   {
+    "tag": "INPUT",
+    "outline": false,
+    "shadow": false
+   },
+   {
+    "tag": "BUTTON",
+    "outline": true,
+    "shadow": false
+   },
+   null,
+   {
+    "tag": "INPUT",
+    "outline": false,
+    "shadow": false
+   }
+  ]
+ }
+}
