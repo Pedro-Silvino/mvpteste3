@@ -23,9 +23,11 @@ Variáveis de ambiente do serviço:
 | `SUPABASE_URL` | `https://gcysfzzpiwospnmwkcar.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | chave service role (segredo do serviço, nunca no repositório) |
 | `RESEND_API_KEY`, `MAIL_FROM` | opcionais: sem elas não há e-mail de alerta |
+| `STAFF_ALERT_EMAIL` | opcional: quem da equipe recebe o e-mail de SOS (o alerta aparece em `/staff` de qualquer forma) |
 
 Pontos de atenção:
 - **Uma única instância.** O limite de 10 envios/hora do coletor e o agendador mensal rodam em memória; duas instâncias duplicariam o agendamento e dobrariam o limite. (Se precisar escalar, mover o limite para o banco e travar o agendador.)
+- **Proxy na frente do worker:** o limite de tentativas com token inválido do `/ingest` usa o **último** valor de `X-Forwarded-For` (o que o proxy da hospedagem acrescenta). Confirmar no primeiro deploy que Railway/Fly acrescentam esse cabeçalho; sem isso o limite vale para o IP do proxy (todos juntos).
 - Memória: o Chromium pede ~512 MB livres durante a geração de PDF.
 - Domínio público do worker (HTTPS) → vai em `WORKER_PUBLIC_URL` do web; é o endereço que o coletor usa (`/ingest`).
 - Teste de saúde: `GET /health` deve responder `{"status":"ok"}`. Nos logs deve aparecer `fila de jobs e agendador mensal LIGADOS`.

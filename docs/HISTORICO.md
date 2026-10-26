@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-26 — Auditoria completa e fechamento do MVP (branch `audit/melhorias-2026-10-21`, nada aplicado no remoto, nada publicado)
+- Feito: auditoria de segurança, produto, UI/UX e código (37 achados, 29 corrigidos, 5 recomendações, 3 paradas). Destaques: scan que falhava travava o questionário; CTA da home ia para o login; SSRF por redirecionamento no scan; `/ingest` sem limite de corpo; 8 vulnerabilidades de dependência (agora 0); contraste AA; evidência com hash só do worker; botão "Tentar de novo"; SOS com limite e e-mail para a equipe.
+- Arquivos: `docs/audit/{01-contexto,02-achados,03-relatorio-final}.md`, `worker/app/{runner,ingest,db,evidence}.py`, `worker/app/scans/external.py`, `supabase/migrations/20261022000000_features.sql` (NÃO aplicada), `apps/web/app/globals.css` e telas do painel.
+- Decisões: D27, D28, D29.
+- Testes: web Vitest 67/67, lint, typecheck e build ok após instalação limpa; worker pytest 134/134; banco local 66/66; `pnpm audit --prod` 0. NÃO verificado: telas logadas no navegador, imagem Docker, banco real.
+- Próximo passo: Pedro lê e aprova as 2 migrações → aplicar, `get_advisors`, `supabase gen types`, roteiro `docs/DEPLOY.md` §4. Depois: merge da branch e deploy (quando o Pedro pedir).
+- Bloqueios: ok nas migrações; termos/privacidade (advogado); preços; chave do Resend e `STAFF_ALERT_EMAIL`; DNS; confirmação de e-mail + captcha no painel do Supabase.
+
 ## 2026-10-22 — Funcionalidades restantes construídas (nada aplicado no remoto, nada publicado)
 - Feito: dados da empresa (`/painel/empresa`); área `/staff`; SOS; documentos (worker gera 3 modelos em PDF; painel pede, baixa e aprova); evidências (upload direto, verificação e SHA-256 no servidor); coletor Windows + `POST /ingest` + tela `/painel/agente`; diagnóstico completo (respostas + coletor, divergência); verificação mensal (agendador, comparação, alertas, relatório de 1 página, e-mail Resend opcional); worker recupera job travado e marca diagnóstico como erro; painel mostra alertas e histórico de relatórios; cabeçalhos de segurança; Dockerfile do worker; `docs/DEPLOY.md` e `docs/SEGURANCA.md`.
 - Arquivos principais: `supabase/migrations/20261021120000_request_plan.sql` e `20261022000000_features.sql` (NÃO aplicadas), `supabase/tests/02_features_test.sql`, `agent/*`, `worker/app/{ingest,monthly,mailer,documents}.py`, `worker/app/engine/{mapping,diff}.py`, `worker/templates/{docs/*,relatorio_*}.html`, `apps/web/app/{painel,staff}/*`.

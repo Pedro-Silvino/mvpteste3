@@ -76,7 +76,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 
 - [~] **T13 Checklist e fichas** — `/painel/riscos` lista as lacunas com a ficha "como resolver" (planos pagos). Falta a visão com os 12 controles juntos e a página `/controle/[id]`.
 - [~] **T14 Documentos** — worker gera Política, Plano de incidente e Designação (modelos-base marcados [REVISÃO JURÍDICA]); painel pede, baixa e aprova. Falta: migração aplicada e os textos finais do Pedro/advogado.
-- [~] **T15 Upload de evidência** — `/painel/evidencias`: envio direto ao bucket, tipo real/tamanho/SHA-256 conferidos no servidor, só plano pago (barrado no banco). Falta: migração aplicada e rotina para apagar arquivos órfãos.
+- [~] **T15 Upload de evidência** — `/painel/evidencias`: envio direto ao bucket; o **worker** confere tipo real, tamanho e calcula o SHA-256 (D27), mostra "em verificação"/"recusado". Só plano pago (barrado no banco). Falta: migração aplicada e rotina para apagar arquivos órfãos.
 - [~] **T16 Staff** — `/staff` (alertas, empresas) e `/staff/org/[id]` (ativar plano, revisar controle, resolver alerta). Falta: o selo "Verificado" (hoje a revisão só muda o status do controle) e migração aplicada.
 - [!] **T17 Contratação** — depende de preços (Pedro). Até lá: "Quero este plano" gera pedido para a equipe, que ativa o plano em `/staff`. Depois: Asaas.
 
@@ -85,8 +85,8 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 - [~] **T18 Execução mensal** — agendador no worker cria a verificação mensal (30 dias) para planos pagos. A tarefa agendada do Windows no coletor ainda não existe.
 - [~] **T19 Comparação e alertas** — `diff.py` compara com o mês anterior (só piora comprovada), cria alertas e e-mail via Resend (desligado sem chave). Falta teste com o banco real.
 - [~] **T20 Relatório mensal** — PDF de 1 página pronto e testado; aparece no histórico de relatórios do painel.
-- [~] **T21 SOS** — `/painel/sos` abre incidente, gera alerta crítico para a equipe e mostra os primeiros passos e o plano de incidente aprovado. Falta: e-mail imediato à equipe (hoje só o alerta em `/staff`) e migração aplicada.
-- [~] **T22 Revisão de segurança final** — primeira rodada feita em `docs/SEGURANCA.md`. Falta repetir depois do deploy (advisors, ambiente real).
+- [~] **T21 SOS** — `/painel/sos` abre incidente (até 3/h), gera alerta crítico, manda e-mail para `STAFF_ALERT_EMAIL` (D29) e mostra os primeiros passos e o plano de incidente aprovado. Falta: migração aplicada e chave do Resend.
+- [~] **T22 Revisão de segurança final** — rodada 1 em `docs/SEGURANCA.md`; rodada 2 (auditoria completa, 37 achados, 29 corrigidos) em `docs/audit/`. Falta repetir depois do deploy (advisors, ambiente real).
 
 ---
 
