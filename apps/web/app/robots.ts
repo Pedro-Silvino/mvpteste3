@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/painel", "/staff", "/diagnostico", "/conta", "/resultado", "/auth", "/redefinir-senha"],
+      disallow: ["/painel", "/staff", "/corretor", "/diagnostico", "/conta", "/resultado", "/auth", "/redefinir-senha"],
     },
   };
 }

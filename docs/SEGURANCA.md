@@ -38,6 +38,7 @@ Revisão feita sobre o código e os testes locais. **Não substitui** a rodada f
 | Sessões anônimas abandonadas (D17) | ❌ | Rotina de limpeza ainda não existe. |
 | Confirmação de e-mail desligada (D16/D17) | 🟡 | Qualquer pessoa pode cadastrar e-mail alheio. O e-mail de alerta só vai ao dono com conta permanente; avaliar ligar a confirmação antes do público aberto. |
 | Worker em instância única | 🟡 | Limite do coletor e agendador mensal em memória. |
+| Programa de corretores (D30–D32) | ✅ local · 🟡 remoto | O corretor só lê por `partner_overview` e `partner_client_detail`, que exigem vínculo ativo com a corretora **e** autorização ativa do cliente; sem isso, nada além de domínio e etapa. Não há política de leitura do corretor nas tabelas da empresa. Testes P12–P37 (`03_partners_test.sql`): outro corretor não vê, revogação corta na hora, corretora desativada perde o painel. `partner_name_by_code` é público e devolve só o nome. **Falta:** aplicar a migração; rate limit no cadastro de corretor (depende do captcha do Supabase, D17); equipe revisar o SUSEP antes de dar benefícios. |
 | Documentos | 🟡 | Modelos-base marcados `[REVISÃO JURÍDICA]`; o conteúdo precisa de revisão do advogado antes de ser oferecido como definitivo. |
 
 ## Como repetir a verificação

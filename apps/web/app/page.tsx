@@ -19,6 +19,9 @@ export default function Home() {
           <Link href="/entrar" className="font-semibold text-sky hover:underline">
             Já tenho conta
           </Link>
+          <Link href="/corretores" className="font-semibold text-sky hover:underline">
+            Sou corretor
+          </Link>
         </div>
       </div>
     </main>

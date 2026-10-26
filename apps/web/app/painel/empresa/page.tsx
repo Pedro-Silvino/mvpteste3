@@ -1,6 +1,7 @@
 import { getPainel } from "@/lib/painel-data";
 import { Card, PageHeader } from "../ui";
 import { CompanyForm } from "./company-form";
+import { PartnerShareCard } from "./partner-share";
 
 export const metadata = { title: "Empresa — Sentinela" };
 
@@ -24,6 +25,7 @@ export default async function EmpresaPage() {
           }}
         />
       </Card>
+      {p.partner && <PartnerShareCard orgId={p.org.id} partnerName={p.partner.name} shared={p.partner.shared} />}
     </div>
   );
 }

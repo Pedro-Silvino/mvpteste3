@@ -48,7 +48,7 @@ export async function createOrganization(_prev: FormState, formData: FormData): 
   const cookieStore = await cookies();
   const partner = normalizePartnerCode(cookieStore.get(PARTNER_COOKIE)?.value);
 
-  const { error } = await supabase.rpc("create_organization", {
+  const { data: orgId, error } = await supabase.rpc("create_organization", {
     p_name: parsed.data.domain, // placeholder until the owner fills in the company name
     p_cnpj: "",
     p_domain: parsed.data.domain,
@@ -63,6 +63,12 @@ export async function createOrganization(_prev: FormState, formData: FormData): 
     // Internal log only: error code/message from Postgres, no form data or e-mail.
     console.error("create_organization failed", { code: error.code, message: error.message });
     return { error: createOrgErrorMessage(error.message), values };
+  }
+
+  // Optional consent to share the diagnostic with the broker who referred this company (revocable in the panel).
+  if (partner && orgId && formData.get("sharePartner") === "on") {
+    const { error: shareError } = await supabase.rpc("grant_partner_share", { p_org: orgId });
+    if (shareError) console.error("grant_partner_share failed", { code: shareError.code, message: shareError.message });
   }
 
   cookieStore.delete(PARTNER_COOKIE);

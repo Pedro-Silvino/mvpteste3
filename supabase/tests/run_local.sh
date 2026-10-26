@@ -29,3 +29,10 @@ echo "$OUT" | grep -E "^(ok|FAIL):" || true
 echo "$OUT" | grep -iE "ERROR|FATAL" | grep -v "should have errored" || true
 if echo "$OUT" | grep -q "^FAIL:"; then echo "TESTES DE FUNCIONALIDADES FALHARAM"; exit 1; fi
 echo "Todos os testes de funcionalidades passaram: $(echo "$OUT" | grep -c '^ok:')"
+
+echo "===== 03_partners_test.sql"
+OUT="$(psql -d rls -f "$ROOT/supabase/tests/03_partners_test.sql" 2>&1)"
+echo "$OUT" | grep -E "^(ok|FAIL):" || true
+echo "$OUT" | grep -iE "ERROR|FATAL" | grep -v "should have errored" || true
+if echo "$OUT" | grep -q "^FAIL:"; then echo "TESTES DE CORRETORES FALHARAM"; exit 1; fi
+echo "Todos os testes de corretores passaram: $(echo "$OUT" | grep -c '^ok:')"

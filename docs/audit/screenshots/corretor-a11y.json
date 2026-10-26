@@ -1,0 +1,97 @@
+{
+ "corretores@360": {
+  "hscroll": false
+ },
+ "corretores@768": {
+  "hscroll": false
+ },
+ "corretores@1280": {
+  "hscroll": false,
+  "checked": 17,
+  "issues": [],
+  "focus": [
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   null,
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   }
+  ]
+ },
+ "corretor-cadastro@360": {
+  "hscroll": false
+ },
+ "corretor-cadastro@768": {
+  "hscroll": false
+ },
+ "corretor-cadastro@1280": {
+  "hscroll": false,
+  "checked": 9,
+  "issues": [],
+  "focus": [
+   {
+    "tag": "INPUT",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "INPUT",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "BUTTON",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "BUTTON",
+    "outline": true,
+    "shadow": false
+   }
+  ]
+ },
+ "comecar-indicado@360": {
+  "hscroll": false
+ },
+ "comecar-indicado@768": {
+  "hscroll": false
+ },
+ "comecar-indicado@1280": {
+  "hscroll": false,
+  "checked": 8,
+  "issues": [],
+  "focus": [
+   {
+    "tag": "INPUT",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "INPUT",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   },
+   {
+    "tag": "A",
+    "outline": true,
+    "shadow": false
+   }
+  ]
+ }
+}

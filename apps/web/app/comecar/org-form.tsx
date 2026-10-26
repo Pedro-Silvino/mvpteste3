@@ -13,7 +13,7 @@ function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   );
 }
 
-export function OrgForm() {
+export function OrgForm({ partnerName }: { partnerName?: string | null }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createOrganization, {});
   const v = state.values ?? {};
   const fe = state.fieldErrors ?? {};
@@ -58,6 +58,19 @@ export function OrgForm() {
         </label>
         <FieldError id="terms-error" messages={fe.acceptTerms} />
       </div>
+
+      {partnerName && (
+        <div className="rounded-lg bg-ice/60 p-4">
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input type="checkbox" name="sharePartner" className="mt-1 h-4 w-4 accent-teal-strong" />
+            <span>
+              Você chegou por indicação de <b>{partnerName}</b>. Autorizo a {partnerName} a ver a nota, o resultado dos controles e as
+              provas que eu enviar (não vê senhas, nem lista de funcionários). Posso retirar a autorização a qualquer momento, no painel.
+            </span>
+          </label>
+          <p className="mt-2 text-xs text-muted">Opcional. Sem marcar, a corretora só sabe que você começou o diagnóstico.</p>
+        </div>
+      )}
 
       {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
 

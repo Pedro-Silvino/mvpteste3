@@ -58,7 +58,7 @@ Preços: **não definidos**. Campo `plan` na organização; nada de valor na tel
 
 - **Dono:** 15 min no início. Depois, lê 1 relatório por mês.
 - **TI / MSP:** 1–2 h para rodar o agente. Depois, segue fichas.
-- **Corretor:** manda o link com código. Lead registrado com a origem.
+- **Corretor:** cadastra a corretora, manda o link com código e acompanha, em `/corretor`, cada cliente indicado: etapa, nota, prontidão para o questionário de seguro e provas. Só vê o resultado de quem autorizou (D31).
 - **Pedro:** só revisa quando o plano é Dossiê ou 360.
 
 ## 7. O que o sistema guarda / não guarda

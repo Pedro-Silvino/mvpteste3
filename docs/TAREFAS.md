@@ -87,6 +87,7 @@ Legenda: `[ ]` a fazer · `[~]` em andamento · `[x]` feito · `[!]` bloqueado (
 - [~] **T20 Relatório mensal** — PDF de 1 página pronto e testado; aparece no histórico de relatórios do painel.
 - [~] **T21 SOS** — `/painel/sos` abre incidente (até 3/h), gera alerta crítico, manda e-mail para `STAFF_ALERT_EMAIL` (D29) e mostra os primeiros passos e o plano de incidente aprovado. Falta: migração aplicada e chave do Resend.
 - [~] **T22 Revisão de segurança final** — rodada 1 em `docs/SEGURANCA.md`; rodada 2 (auditoria completa, 37 achados, 29 corrigidos) em `docs/audit/`. Falta repetir depois do deploy (advisors, ambiente real).
+- [~] **T23 Programa de corretores** — cadastro (`/corretores`, `/corretor/cadastro`, `/corretor/novo`), painel `/corretor` e detalhe do cliente, consentimento no `/comecar` e em `/painel/empresa`, prontidão para ciberseguro no painel do cliente e do corretor, `/staff` ativa/desativa corretora (D30–D32). Migração local `20261026000000_partners.sql` (NÃO aplicada). Falta: migração aplicada, teste ponta a ponta no Supabase real, e-mail de confirmação ligado.
 
 ---
 

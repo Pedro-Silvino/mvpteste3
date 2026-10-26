@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { normalizePartnerCode, PARTNER_COOKIE } from "@/lib/partner";
 import { createClient } from "@/lib/supabase/server";
 import { OrgForm } from "./org-form";
 
@@ -17,7 +19,14 @@ export default async function ComecarPage() {
       .select("org_id", { count: "exact", head: true })
       .eq("user_id", user.id);
     if (count && count > 0) redirect("/painel");
+    // A broker's own account goes to the broker panel, not to a new diagnostic.
+    const { count: asPartner } = await supabase.from("partner_members").select("partner_id", { count: "exact", head: true }).eq("user_id", user.id);
+    if (asPartner && asPartner > 0) redirect("/corretor");
   }
+
+  // Referral link (?p=CODE, kept in a cookie): the visitor is told who referred them and can authorize sharing.
+  const code = normalizePartnerCode((await cookies()).get(PARTNER_COOKIE)?.value);
+  const { data: partnerName } = code ? await supabase.rpc("partner_name_by_code", { p_code: code }) : { data: null };
 
   return (
     <main className="flex flex-1 items-center justify-center bg-ice px-4 py-12">
@@ -26,7 +35,7 @@ export default async function ComecarPage() {
         <p className="mt-2 text-muted">
           Leva 10 segundos. Sem cadastro: você só cria e-mail e senha no final, para salvar o resultado.
         </p>
-        <OrgForm />
+        <OrgForm partnerName={partnerName} />
       </div>
     </main>
   );

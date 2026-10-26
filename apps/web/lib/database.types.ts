@@ -610,26 +610,44 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          created_by: string | null
           id: string
           kind: string
           name: string
+          susep: string | null
         }
         Insert: {
           active?: boolean
           code: string
           created_at?: string
+          created_by?: string | null
           id?: string
           kind: string
           name: string
+          susep?: string | null
         }
         Update: {
           active?: boolean
           code?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           kind?: string
           name?: string
+          susep?: string | null
         }
+        Relationships: []
+      }
+      partner_members: {
+        Row: { created_at: string; partner_id: string; role: string; user_id: string }
+        Insert: { created_at?: string; partner_id: string; role?: string; user_id: string }
+        Update: { created_at?: string; partner_id?: string; role?: string; user_id?: string }
+        Relationships: []
+      }
+      partner_shares: {
+        Row: { granted_at: string; granted_by: string; org_id: string; partner_id: string; revoked_at: string | null }
+        Insert: { granted_at?: string; granted_by: string; org_id: string; partner_id: string; revoked_at?: string | null }
+        Update: { granted_at?: string; granted_by?: string; org_id?: string; partner_id?: string; revoked_at?: string | null }
         Relationships: []
       }
       profiles: {
@@ -758,6 +776,16 @@ export type Database = {
     }
     Functions: {
       approve_document: { Args: { p_document: string }; Returns: undefined }
+      grant_partner_share: { Args: { p_org: string }; Returns: undefined }
+      revoke_partner_share: { Args: { p_org: string }; Returns: undefined }
+      org_partner_status: { Args: { p_org: string }; Returns: Json }
+      partner_name_by_code: { Args: { p_code: string }; Returns: string }
+      partner_overview: { Args: never; Returns: Json }
+      partner_client_detail: { Args: { p_org: string }; Returns: Json }
+      register_partner: { Args: { p_kind: string; p_name: string; p_susep: string }; Returns: string }
+      staff_set_partner_active: { Args: { p_active: boolean; p_partner: string }; Returns: undefined }
+      org_can_collect_evidence: { Args: { p_org: string }; Returns: boolean }
+      is_partner_member: { Args: { p_partner: string }; Returns: boolean }
       open_incident: { Args: { p_description: string; p_org: string }; Returns: string }
       org_is_paid: { Args: { p_org: string }; Returns: boolean }
       request_document: { Args: { p_kind: string; p_org: string; p_params: Json }; Returns: undefined }

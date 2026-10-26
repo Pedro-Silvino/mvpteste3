@@ -3,7 +3,7 @@ import { formatDateTime } from "@/lib/assessment-data";
 import { planName } from "@/lib/plans";
 import { requireStaff } from "@/lib/staff";
 import { Card, PageHeader } from "../painel/ui";
-import { resolveAlert } from "./actions";
+import { resolveAlert, setPartnerActive } from "./actions";
 
 const SEVERITY: Record<string, string> = {
   critico: "bg-red-100 text-red-800",
@@ -13,8 +13,8 @@ const SEVERITY: Record<string, string> = {
 
 export default async function StaffHomePage() {
   const { supabase } = await requireStaff();
-  const [{ data: orgs }, { data: assessments }, { data: alerts }] = await Promise.all([
-    supabase.from("organizations").select("id, name, domain, plan, created_at").order("created_at", { ascending: false }).limit(200),
+  const [{ data: orgs }, { data: assessments }, { data: alerts }, { data: partners }] = await Promise.all([
+    supabase.from("organizations").select("id, name, domain, plan, created_at, partner_id").order("created_at", { ascending: false }).limit(200),
     supabase
       .from("assessments")
       .select("org_id, score, status, created_at")
@@ -22,7 +22,10 @@ export default async function StaffHomePage() {
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase.from("alerts").select("id, org_id, severity, message, created_at").is("resolved_at", null).order("created_at", { ascending: false }).limit(100),
+    supabase.from("partners").select("id, name, code, kind, susep, active, created_at").order("created_at", { ascending: false }).limit(200),
   ]);
+  const clientsByPartner = new Map<string, number>();
+  for (const o of orgs ?? []) if (o.partner_id) clientsByPartner.set(o.partner_id, (clientsByPartner.get(o.partner_id) ?? 0) + 1);
 
   const latest = new Map<string, { score: number | null; status: string }>();
   for (const a of assessments ?? []) if (!latest.has(a.org_id)) latest.set(a.org_id, { score: a.score, status: a.status });
@@ -58,6 +61,50 @@ export default async function StaffHomePage() {
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      <Card className="mb-6">
+        <h2 className="text-lg font-bold text-n1">Corretoras ({partners?.length ?? 0})</h2>
+        {(partners ?? []).length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Nenhuma corretora cadastrada.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[34rem] text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="py-2 pr-3">Corretora</th>
+                  <th className="py-2 pr-3">SUSEP</th>
+                  <th className="py-2 pr-3">Clientes</th>
+                  <th className="py-2 pr-3">Situação</th>
+                  <th className="py-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {(partners ?? []).map((pt) => (
+                  <tr key={pt.id}>
+                    <td className="py-3 pr-3">
+                      <p className="font-semibold text-n1">{pt.name}</p>
+                      <p className="font-mono text-xs text-muted">{pt.code}</p>
+                    </td>
+                    <td className="py-3 pr-3">{pt.susep ?? "—"}</td>
+                    <td className="py-3 pr-3">{clientsByPartner.get(pt.id) ?? 0}</td>
+                    <td className="py-3 pr-3">{pt.active ? "Ativa" : "Desativada"}</td>
+                    <td className="py-3 text-right">
+                      <form action={setPartnerActive}>
+                        <input type="hidden" name="partnerId" value={pt.id} />
+                        <input type="hidden" name="active" value={pt.active ? "false" : "true"} />
+                        <button className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-n3 hover:bg-ice">
+                          {pt.active ? "Desativar" : "Ativar"}
+                          <span className="sr-only"> {pt.name}</span>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 

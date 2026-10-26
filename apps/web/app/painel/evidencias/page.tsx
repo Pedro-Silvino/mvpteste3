@@ -15,7 +15,7 @@ export default async function EvidenciasPage() {
 
   const supabase = await createClient();
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const [{ data: files }, { data: checks }] = p.paid
+  const [{ data: files }, { data: checks }] = p.canCollectEvidence
     ? await Promise.all([
         supabase
           .from("evidence")
@@ -45,10 +45,10 @@ export default async function EvidenciasPage() {
         subtitle="Guarde a prova de cada controle (um print do backup, o relatório do antivírus) com data e código de verificação. Isso ajuda a responder questionários de seguradoras e de clientes."
       />
 
-      {!p.paid ? (
+      {!p.canCollectEvidence ? (
         <LockedCard
           title="Guarde as provas dos seus controles"
-          text="Envie prints e arquivos que comprovam cada controle, com data e código SHA-256 de cada arquivo. Liberado em qualquer plano pago."
+          text="Envie prints e arquivos que comprovam cada controle, com data e código SHA-256 de cada arquivo. Liberado nos planos pagos e para empresas indicadas por uma corretora."
         />
       ) : (
         <>

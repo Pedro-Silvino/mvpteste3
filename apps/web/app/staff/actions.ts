@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/staff";
 
 const planSchema = z.object({ orgId: z.uuid(), plan: z.enum(["express", "essencial", "dossie", "360"]) });
 const alertSchema = z.object({ alertId: z.uuid() });
+const partnerSchema = z.object({ partnerId: z.uuid(), active: z.enum(["true", "false"]) });
 const reviewSchema = z.object({
   assessmentId: z.uuid(),
   orgId: z.uuid(),
@@ -20,6 +21,15 @@ export async function setPlan(formData: FormData) {
   if (!parsed.success) return;
   const { error } = await supabase.rpc("staff_set_plan", { p_org: parsed.data.orgId, p_plan: parsed.data.plan });
   if (error) console.error("staff_set_plan failed", { code: error.code, message: error.message });
+  revalidatePath("/staff", "layout");
+}
+
+export async function setPartnerActive(formData: FormData) {
+  const { supabase } = await requireStaff();
+  const parsed = partnerSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const { error } = await supabase.rpc("staff_set_partner_active", { p_partner: parsed.data.partnerId, p_active: parsed.data.active === "true" });
+  if (error) console.error("staff_set_partner_active failed", { code: error.code, message: error.message });
   revalidatePath("/staff", "layout");
 }
 

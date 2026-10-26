@@ -40,7 +40,8 @@ select public.t_fails('T29 cliente não resolve alerta', format($q$select public
 
 -- plano grátis: sem evidência e sem pedido de documento
 select public.t_fails('T30 evidência bloqueada no plano grátis', format($q$insert into public.evidence(org_id,control_id,storage_path,file_name,mime,size_bytes,sha256) values (%L,'C06',%L||'/e1.png','e1.png','image/png',10,repeat('a',64))$q$, :'org_a', :'org_a'));
-select public.t_fails('T31 upload no Storage bloqueado no plano grátis', format($q$insert into storage.objects(bucket_id,name) values ('evidence', %L||'/livre.png')$q$, :'org_a'));
+-- A empresa A veio por um corretor (SINCOR-BH): a evidência é liberada mesmo no plano grátis (migração partners). O bloqueio sem corretor é o P40.
+select public.t_passes('T31 upload no Storage liberado para empresa indicada por corretor, mesmo no plano grátis', format($q$insert into storage.objects(bucket_id,name) values ('evidence', %L||'/livre.png')$q$, :'org_a'));
 select public.t_fails('T32 documento bloqueado no plano grátis', format($q$select public.request_document(%L,'politica','{}'::jsonb)$q$, :'org_a'));
 
 -- SOS: qualquer membro abre

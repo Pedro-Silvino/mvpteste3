@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-26 — Programa de corretores e prontidão para ciberseguro (branch `audit/melhorias-2026-10-21`, nada aplicado no remoto)
+- Feito: corretor se cadastra (2 passos), recebe link de indicação e vê os clientes indicados com etapa, nota, prontidão para o seguro e provas; detalhe por cliente com os 12 controles e a lista de provas. Cliente autoriza (ou não) o corretor a ver o resultado, no cadastro ou em Empresa, e pode retirar. Evidência liberada para cliente indicado mesmo no grátis. Cartão de prontidão na Visão geral do cliente. `/staff` lista e ativa/desativa corretoras. Página pública `/corretores`.
+- Arquivos: `supabase/migrations/20261026000000_partners.sql` (NÃO aplicada), `supabase/tests/03_partners_test.sql`, `apps/web/lib/{readiness,partner-data,partner-session}.ts`, `apps/web/lib/validation/partner.ts`, `apps/web/app/corretor/**`, `apps/web/app/corretores/page.tsx`, `apps/web/app/painel/{readiness-card.tsx,empresa/partner-share.tsx}`.
+- Decisões: D30, D31, D32.
+- Testes: web Vitest 84/84, lint, typecheck e build ok; worker 134/134; banco local 66 + 47 (isolamento entre corretoras, consentimento, revogação, desativação). Capturas de `/corretores` e `/corretor/cadastro` em `docs/audit/screenshots/`. NÃO verificado: painel logado no navegador e fluxo no Supabase real (migração pendente).
+- Próximo passo: Pedro aprova as 3 migrações (request_plan, features, partners) → aplicar, `get_advisors`, `supabase gen types`, roteiro `docs/DEPLOY.md` §4 incluindo o fluxo do corretor. Revisar a lista de controles essenciais (D32) e os textos de consentimento com o advogado.
+- Bloqueios: ok nas migrações; textos jurídicos (termos, privacidade, consentimento de compartilhamento); confirmação de e-mail ligada no Supabase (o cadastro do corretor já trata os dois casos).
+
 ## 2026-10-26 — Auditoria completa e fechamento do MVP (branch `audit/melhorias-2026-10-21`, nada aplicado no remoto, nada publicado)
 - Feito: auditoria de segurança, produto, UI/UX e código (37 achados, 29 corrigidos, 5 recomendações, 3 paradas). Destaques: scan que falhava travava o questionário; CTA da home ia para o login; SSRF por redirecionamento no scan; `/ingest` sem limite de corpo; 8 vulnerabilidades de dependência (agora 0); contraste AA; evidência com hash só do worker; botão "Tentar de novo"; SOS com limite e e-mail para a equipe.
 - Arquivos: `docs/audit/{01-contexto,02-achados,03-relatorio-final}.md`, `worker/app/{runner,ingest,db,evidence}.py`, `worker/app/scans/external.py`, `supabase/migrations/20261022000000_features.sql` (NÃO aplicada), `apps/web/app/globals.css` e telas do painel.

@@ -38,6 +38,7 @@ Projeto com raiz em `apps/web`. Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PU
 - Domínio `app.datadops.com.br`: o Pedro aponta o DNS (CNAME para a Vercel).
 
 ## 4. Teste ponta a ponta em produção (empresa de teste)
+Inclua o fluxo do corretor: (a) `/corretores` → cadastrar → `/corretor` com o link; (b) abrir o link em outra janela, fazer o diagnóstico marcando a autorização; (c) o cliente aparece no painel do corretor com nota e prontidão; (d) enviar uma evidência no cliente e ver a contagem de provas subir; (e) retirar a autorização em Empresa e conferir que o corretor perde a nota. `NEXT_PUBLIC_APP_URL` precisa ser o endereço público do portal (é ele que forma o link de indicação).
 1. `/comecar` com um domínio de teste → questionário → cai no `/painel` com a animação e depois o relatório.
 2. No Supabase, conferir `scan_results` (módulo `externo`) e `reports` (2 linhas).
 3. `/painel/planos` → "Quero este plano" (conta permanente) → alerta aparece em `/staff`.

@@ -4,6 +4,7 @@ import { getPainel } from "@/lib/painel-data";
 import { planName } from "@/lib/plans";
 import { bandFor, countByStatus } from "@/lib/result";
 import { DownloadButton } from "../resultado/download-button";
+import { ReadinessCard } from "./readiness-card";
 import { ScoreRing } from "./score-ring";
 import { Card, CHIP, Icon, PageHeader } from "./ui";
 
@@ -86,6 +87,8 @@ export default async function VisaoGeralPage() {
           )}
         </Kpi>
       </div>
+
+      <ReadinessCard readiness={p.readiness} canCollectEvidence={p.canCollectEvidence} />
 
       {p.alerts.length > 0 && (
         <Card className="mb-4 border-amber-200 bg-amber-50/60">
