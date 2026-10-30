@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-30 — CAT-TPRM ciclo 1: cofre WORM e esquema TPRM (branch `release/prova-cyber-v1`, nada aplicado no remoto)
+- Feito: tiers `core`/`pro`/`scale` aceitos junto dos planos antigos; cofre `evidence_vault` imutável (gatilho barra UPDATE/DELETE/TRUNCATE) com `vault_register`; tabelas `vendor_organizations`, `vendor_assessments`, `vendor_evidence_links` com RLS; funções do fornecedor por token (`add_vendor`, `create_vendor_assessment`, `vendor_get_assessment`, `vendor_submit_assessment`).
+- Arquivos: `supabase/migrations/20261030000000_cat_tprm_core.sql` (NÃO aplicada), `supabase/tests/03_worm_vault_test.sql`, `supabase/tests/run_local.sh`, `EXECUTION_STATE.md`.
+- Decisões: D33, D34.
+- Testes: banco local, 48 verificações novas ok; 01, 02 e corretores seguem verdes. O teste pegou um bug: regex com repetição {1,300} (limite do Postgres é 255), já corrigido.
+- Próximo passo: ciclo 2 (worker). Antes de aplicar no remoto: Pedro lê o SQL e dá o ok; depois `get_advisors` e `supabase gen types`.
+- Bloqueios: ok do Pedro na migração; mapeamento comercial dos planos (D33). O ASM de portas só roda com autorização assinada (CLAUDE.md §4.10), não livre como o pedido original sugeria.
+
 ## 2026-10-26 — Programa de corretores e prontidão para ciberseguro (branch `audit/melhorias-2026-10-21`, nada aplicado no remoto)
 - Feito: corretor se cadastra (2 passos), recebe link de indicação e vê os clientes indicados com etapa, nota, prontidão para o seguro e provas; detalhe por cliente com os 12 controles e a lista de provas. Cliente autoriza (ou não) o corretor a ver o resultado, no cadastro ou em Empresa, e pode retirar. Evidência liberada para cliente indicado mesmo no grátis. Cartão de prontidão na Visão geral do cliente. `/staff` lista e ativa/desativa corretoras. Página pública `/corretores`.
 - Arquivos: `supabase/migrations/20261026000000_partners.sql` (NÃO aplicada), `supabase/tests/03_partners_test.sql`, `apps/web/lib/{readiness,partner-data,partner-session}.ts`, `apps/web/lib/validation/partner.ts`, `apps/web/app/corretor/**`, `apps/web/app/corretores/page.tsx`, `apps/web/app/painel/{readiness-card.tsx,empresa/partner-share.tsx}`.
