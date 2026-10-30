@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-30 — CAT-TPRM ciclo 2: ASM de portas, conector M365 sem agente e webhooks (branch `release/prova-cyber-v1`)
+- Feito: `scans/asm.py` (TCP connect em 3389/22/445, sem enviar dado, timeout 3 s, só IP público, exige `scan_ativo`); DMARC estrito (só `p=reject`/`p=quarantine`; `p=none` agora é falha; lê a tag inteira, então `sp=reject` não engana); `connectors/m365.py` (Graph: MFA de admins e licenças de segurança, só contagens, paginação presa ao host da Graph, token nunca em erro); `notifications/webhooks.py` (Slack, Teams e e-mail; destinos validados; não repete aviso de SPF/DMARC que já estava em falha).
+- Arquivos: `worker/app/{scans/asm.py,connectors/m365.py,notifications/webhooks.py}`, `worker/app/scans/external.py`, `worker/tests/{test_asm_ports,test_m365_connector,test_webhooks}.py`.
+- Decisões: D35.
+- Testes: `uv run pytest` 161/161 (27 novos). Nada testado contra Graph ou webhooks reais.
+- Próximo passo: ciclo 3 (web). Ligar o ASM ao runner (checar `authorizations` `scan_ativo` no banco) e o `webhooks.dispatch` à verificação mensal ficou para quando houver tela de autorização e de destinos de aviso.
+- Bloqueios: nenhum novo.
+
 ## 2026-10-30 — CAT-TPRM ciclo 1: cofre WORM e esquema TPRM (branch `release/prova-cyber-v1`, nada aplicado no remoto)
 - Feito: tiers `core`/`pro`/`scale` aceitos junto dos planos antigos; cofre `evidence_vault` imutável (gatilho barra UPDATE/DELETE/TRUNCATE) com `vault_register`; tabelas `vendor_organizations`, `vendor_assessments`, `vendor_evidence_links` com RLS; funções do fornecedor por token (`add_vendor`, `create_vendor_assessment`, `vendor_get_assessment`, `vendor_submit_assessment`).
 - Arquivos: `supabase/migrations/20261030000000_cat_tprm_core.sql` (NÃO aplicada), `supabase/tests/03_worm_vault_test.sql`, `supabase/tests/run_local.sh`, `EXECUTION_STATE.md`.

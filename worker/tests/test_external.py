@@ -25,7 +25,7 @@ def test_spf():
 def test_dmarc():
     assert eval_dmarc(["v=DMARC1; p=reject; rua=mailto:a@b.com"]) == "ok"
     assert eval_dmarc(["v=DMARC1; p=quarantine"]) == "ok"
-    assert eval_dmarc(["v=DMARC1; p=none"]) == "parcial"
+    assert eval_dmarc(["v=DMARC1; p=none"]) == "falha"
     assert eval_dmarc([]) == "falha"
 
 

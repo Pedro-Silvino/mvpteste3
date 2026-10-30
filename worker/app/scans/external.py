@@ -37,13 +37,13 @@ def eval_spf(txts: list[str]) -> str:
 
 
 def eval_dmarc(txts: list[str]) -> str:
-    for t in txts:
-        t = t.strip().lower().replace(" ", "")
-        if t.startswith("v=dmarc1"):
-            if "p=reject" in t or "p=quarantine" in t:
-                return "ok"
-            return "parcial"
-    return "falha"
+    """Estrito: só política p=reject ou p=quarantine pontua. p=none (só monitora), ausência de p= ou mais de um
+    registro DMARC (inválido pela RFC 7489) é falha. A tag é lida por inteiro: sp=reject não vale como p=."""
+    records = [t.strip().lower() for t in txts if t.strip().lower().replace(" ", "").startswith("v=dmarc1")]
+    if len(records) != 1:
+        return "falha"
+    tags = dict(part.strip().split("=", 1) for part in records[0].split(";") if "=" in part)
+    return "ok" if tags.get("p", "").strip() in ("reject", "quarantine") else "falha"
 
 
 def eval_dkim(found: bool) -> str:
