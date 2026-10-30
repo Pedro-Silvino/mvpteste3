@@ -1,0 +1,72 @@
+{% extends "_base.html" %}
+{% block pages %}
+<style>
+  .sec { border: .3mm solid var(--line); border-left: 1.6mm solid var(--teal); border-radius: 2mm; padding: 3mm 4.5mm; margin-bottom: 3.5mm; }
+  .sec h3 { font-size: 11pt; color: var(--n1); display: flex; justify-content: space-between; align-items: flex-start; gap: 3mm; }
+  .sec .q { color: var(--muted); font-size: 9pt; margin-top: .8mm; }
+  .sec .ctl { font-size: 9pt; margin-top: 1.5mm; }
+  .sec ul { margin: 1.5mm 0 0 4.5mm; font-size: 8.8pt; }
+  .sec .hash { font-family: Consolas, "Courier New", monospace; font-size: 7.2pt; color: var(--muted); word-break: break-all; }
+  .s-em_dia { background: #DDF1E4; color: #1E8449; }
+  .s-sem_prova { background: #FBEBCF; color: #9A6407; }
+  .s-lacuna { background: #F8DAD6; color: #C0392B; }
+  .authcode { font-family: Consolas, "Courier New", monospace; font-size: 7pt; word-break: break-all; color: var(--n3); }
+</style>
+<section class="page">
+  <div class="hero">
+    <div class="brand">DataDops · Sentinela</div>
+    <h1>Dossiê para seguradora<br>de ciberseguro</h1>
+    <div class="sub">Resumo dos controles que a seguradora costuma perguntar, com as provas guardadas</div>
+    <div class="meta">
+      <div><span>Empresa</span><b>{{ empresa }}</b></div>
+      <div><span>Domínio</span><b>{{ dominio }}</b></div>
+      <div><span>Evidência registrada em</span><b>{{ data }}</b></div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="score-row">
+      <div class="dial"><span class="n">{{ nota }}</span><span class="of">de 100</span></div>
+      <div>
+        <span class="band">{{ faixa.rotulo }}</span><span class="seal">{% if verificado %}Verificado pela equipe DataDops{% else %}Autoavaliado{% endif %}</span>
+        <p>{{ prontidao.em_dia }} de {{ prontidao.total }} temas com controle atendido e prova registrada no cofre.</p>
+        <p>{% if verificado %}As evidências foram revisadas pela equipe DataDops.{% else %}Respostas declaradas pela empresa e checagens automáticas. As evidências não foram revisadas pela equipe.{% endif %}</p>
+      </div>
+    </div>
+
+    <h2>Situação por tema</h2>
+    <table>
+      <thead><tr><th>Tema</th><th>Situação</th></tr></thead>
+      <tbody>
+      {% for s in secoes %}
+        <tr><td>{{ s.titulo }}</td><td><span class="chip s-{{ s.situacao }}">{{ s.situacao_rotulo }}</span></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="note">As provas ficam num cofre de evidências que não permite alterar nem apagar o arquivo depois de guardado. Isso garante que o arquivo é o mesmo da data registrada, não que o controle funcione hoje.</p>
+  </div>
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}<br>Código de autenticidade do conteúdo (SHA-256): <span class="authcode">{{ content_hash }}</span></footer>
+</section>
+
+<section class="page">
+  <div class="p2">
+    <h2>Detalhe e evidências</h2>
+    {% for s in secoes %}
+    <div class="sec">
+      <h3><span>{{ s.titulo }}</span><span class="chip s-{{ s.situacao }}">{{ s.situacao_rotulo }}</span></h3>
+      <p class="q">{{ s.pergunta }}</p>
+      <p class="ctl">{% for c in s.controles %}Controle {{ c.id }}: <b>{{ c.rotulo }}</b>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+      {% if s.evidencias %}
+      <ul>
+        {% for e in s.evidencias %}<li>{{ e.titulo }}, registrada em {{ e.data }}<br><span class="hash">SHA-256 {{ e.sha256 }}</span></li>{% endfor %}
+        {% if s.extras %}<li>e mais {{ s.extras }} no cofre</li>{% endif %}
+      </ul>
+      {% else %}
+      <p class="note">Nenhuma evidência deste tema guardada no cofre.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <p class="note">As declarações feitas à seguradora são de responsabilidade da empresa. Este dossiê organiza as informações; a seguradora decide sobre a aceitação.</p>
+  </div>
+  <footer><b>Retrato do ambiente na data da coleta.</b> {{ rodape }}<br>Código de autenticidade do conteúdo (SHA-256): <span class="authcode">{{ content_hash }}</span></footer>
+</section>
+{% endblock %}

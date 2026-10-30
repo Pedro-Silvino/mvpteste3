@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-30 — CAT-TPRM ciclo 5: dossiê de ciberseguro e console MSP (branch `release/prova-cyber-v1`)
+- Feito: `worker/app/reports/cyber_insurance.py` + `templates/dossie_ciberseguro.html` (PDF de 2 páginas com os 4 temas da seguradora: MFA, backup e restauração, continuidade, atualizações; cada tema com situação dos controles e até 3 evidências do cofre com data e SHA-256; selo Autoavaliado, ou Verificado só se pedido; rodapé legal e código de autenticidade SHA-256); console MSP em `/corretor/msp` (resumo da carteira, filtro por prontidão, ordem por atenção, "Monitorar" abre os 12 controles da subconta) e `/painel/msp` que encaminha para ele.
+- Arquivos: `worker/app/reports/cyber_insurance.py`, `worker/templates/dossie_ciberseguro.html`, `worker/tests/test_cyber_insurance.py`, `apps/web/lib/msp.ts` (+ teste), `apps/web/app/corretor/(painel)/msp/page.tsx`, `apps/web/app/painel/msp/page.tsx`, link no painel do corretor.
+- Decisões: D38.
+- Testes (validação final): worker pytest 192/192; web Vitest 126/126, typecheck, lint e build ok; banco local 66 + 47 + 48. Dossiê conferido por captura no pior caso (4 temas com 3 evidências): cabe em 2 páginas. NÃO verificado: telas no navegador logado, geração do dossiê com dados do banco real.
+- Próximo passo: ligar o dossiê ao produto (job `dossie` no worker, botão no painel, gravar em `reports` com `pdf_sha256`), telas da contratante para fornecedores, agendador de `/tprm/reassess`, aplicar migrações (ok do Pedro) e gerar tipos.
+- Bloqueios: ok do Pedro nas migrações (cofre/TPRM e Prova Cyber); o texto da catálogo `X02` em `docs/BASE12.json` ainda diz "p=none = parcial" e o código agora trata como falha (D35).
+
 ## 2026-10-30 — CAT-TPRM ciclo 4: portal do fornecedor e Score TPRM (branch `release/prova-cyber-v1`)
 - Feito: `/fornecedor/[token]` (sem login, não indexada, sem referrer; 12 perguntas com opção de anexar prova; envio por função do banco que aceita o token uma vez; tela final com convite para o diagnóstico gratuito); worker `app/tprm/` com Score TPRM (60% respostas + 40% checagem externa do domínio; "sim" sem prova vale 70%; homologado ≥ 70 sem falha nos 6 controles essenciais, reprovado < 50), Score da cadeia (média por criticidade), `POST /tprm/vendor/{token}/evidence` (tipo real, SHA-256, limite de 10 MB, 20 arquivos, 404 igual para token inválido/expirado/revogado/usado) e `POST /tprm/reassess` (reavaliação dos homologados a cada 90 dias, aviso se perder a homologação; protegido por `TPRM_CRON_TOKEN`, desligado se vazio).
 - Arquivos: `worker/app/tprm/{scoring,service,api}.py`, `worker/app/{db,main}.py`, `worker/tests/test_tprm.py`, `apps/web/lib/vendor.ts` (+ teste), `apps/web/app/fornecedor/[token]/*`, `.env.example`.

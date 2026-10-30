@@ -22,6 +22,7 @@ export default async function CorretorHomePage() {
       <PageHeader
         title="Clientes indicados"
         subtitle="Quem entrou pelo seu link, em que etapa está e se já tem as provas que a seguradora costuma pedir."
+        action={<Link href="/corretor/msp" className="link text-sm">Console MSP (visão consolidada)</Link>}
       />
 
       <Card>

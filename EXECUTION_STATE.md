@@ -6,11 +6,11 @@ Estado dos 5 ciclos. Marcar `[x]` só com testes passando.
 - [x] **Ciclo 2** — ASM de portas (com autorização `scan_ativo`), DMARC estrito, conector M365, webhooks; pytest 161 ok. Falta ligar ao runner (precisa de telas)
 - [x] **Ciclo 3** — API do cofre, parser, matcher determinístico e telas; web 113 testes, lint, typecheck e build ok
 - [x] **Ciclo 4** — portal do fornecedor, Score TPRM, reavaliação; worker 181 testes, web 119, build ok. Faltam telas da contratante e agendador
-- [ ] **Ciclo 5** — dossiê de ciberseguro (PDF + SHA-256), console MSP, validação final
+- [x] **Ciclo 5** — dossiê PDF (2 páginas, SHA-256 no rodapé) e console MSP; validação final ok. Falta ligar o dossiê ao job e ao painel
 
 ## Definition of Done (rodar no fim)
-- [ ] `pnpm --filter web typecheck`
-- [ ] `pnpm --filter web lint`
-- [ ] `pnpm --filter web test`
-- [ ] `cd worker && uv run pytest -v`
-- [ ] `pnpm --filter web build`
+- [x] `pnpm --filter web typecheck`
+- [x] `pnpm --filter web lint`
+- [x] `pnpm --filter web test` (126)
+- [x] `cd worker && uv run pytest -v` (192)
+- [x] `pnpm --filter web build`
