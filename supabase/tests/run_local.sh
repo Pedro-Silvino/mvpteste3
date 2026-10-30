@@ -36,3 +36,10 @@ echo "$OUT" | grep -E "^(ok|FAIL):" || true
 echo "$OUT" | grep -iE "ERROR|FATAL" | grep -v "should have errored" || true
 if echo "$OUT" | grep -q "^FAIL:"; then echo "TESTES DE CORRETORES FALHARAM"; exit 1; fi
 echo "Todos os testes de corretores passaram: $(echo "$OUT" | grep -c '^ok:')"
+
+echo "===== 03_worm_vault_test.sql"
+OUT="$(psql -d rls -f "$ROOT/supabase/tests/03_worm_vault_test.sql" 2>&1)"
+echo "$OUT" | grep -E "^(ok|FAIL):" || true
+echo "$OUT" | grep -iE "ERROR|FATAL" | grep -v "should have errored" || true
+if echo "$OUT" | grep -q "^FAIL:"; then echo "TESTES DO COFRE/TPRM FALHARAM"; exit 1; fi
+echo "Todos os testes do cofre e do TPRM passaram: $(echo "$OUT" | grep -c '^ok:')"
