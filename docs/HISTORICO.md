@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-30 — CAT-TPRM ciclo 4: portal do fornecedor e Score TPRM (branch `release/prova-cyber-v1`)
+- Feito: `/fornecedor/[token]` (sem login, não indexada, sem referrer; 12 perguntas com opção de anexar prova; envio por função do banco que aceita o token uma vez; tela final com convite para o diagnóstico gratuito); worker `app/tprm/` com Score TPRM (60% respostas + 40% checagem externa do domínio; "sim" sem prova vale 70%; homologado ≥ 70 sem falha nos 6 controles essenciais, reprovado < 50), Score da cadeia (média por criticidade), `POST /tprm/vendor/{token}/evidence` (tipo real, SHA-256, limite de 10 MB, 20 arquivos, 404 igual para token inválido/expirado/revogado/usado) e `POST /tprm/reassess` (reavaliação dos homologados a cada 90 dias, aviso se perder a homologação; protegido por `TPRM_CRON_TOKEN`, desligado se vazio).
+- Arquivos: `worker/app/tprm/{scoring,service,api}.py`, `worker/app/{db,main}.py`, `worker/tests/test_tprm.py`, `apps/web/lib/vendor.ts` (+ teste), `apps/web/app/fornecedor/[token]/*`, `.env.example`.
+- Decisões: D37.
+- Testes: worker pytest 181/181 (20 novos); web Vitest 119/119, lint, typecheck e build ok. NÃO verificado: fluxo no navegador e contra o Supabase real (migração do ciclo 1 não aplicada).
+- Próximo passo: ciclo 5 (dossiê de ciberseguro e console MSP). Faltam telas da empresa contratante para cadastrar fornecedor e gerar convite (as funções `add_vendor` e `create_vendor_assessment` já existem no banco) e um agendador chamando `/tprm/reassess`.
+- Bloqueios: ok do Pedro na migração; definir `NEXT_PUBLIC_WORKER_URL`, `APP_ORIGIN` e `TPRM_CRON_TOKEN` no deploy.
+
 ## 2026-10-30 — CAT-TPRM ciclo 3: API do cofre, leitor de questionários e respostas assistidas (branch `release/prova-cyber-v1`)
 - Feito: `POST/GET /api/vault` (o navegador envia o arquivo ao bucket privado e calcula o SHA-256; o servidor baixa, confere o tipo real e recalcula o hash, e recusa com 422 se não bater; só então chama `vault_register`); `POST /api/questionnaires/parse` (JSON ou CSV, com limites); `lib/questionnaire-matcher.ts` (regras fixas por palavra-chave, evidência mais nova da categoria, trilha com id e SHA-256, aviso de evidência com mais de 1 ano); telas `/painel/cofre` e `/painel/questionarios` (aprovar em 1 clique e baixar CSV das respostas aprovadas, com proteção contra fórmula de planilha).
 - Arquivos: `apps/web/lib/{vault,questionnaire-parser,questionnaire-matcher}.ts` (+ testes), `apps/web/app/api/{vault,questionnaires/parse}/route.ts`, `apps/web/app/painel/{cofre,questionarios}/*`, `sidebar-nav.tsx`.

@@ -5,7 +5,7 @@ Estado dos 5 ciclos. Marcar `[x]` só com testes passando.
 - [x] **Ciclo 1** — migração `20261030000000_cat_tprm_core.sql` (NÃO aplicada no remoto) + `supabase/tests/03_worm_vault_test.sql` (48 verificações ok)
 - [x] **Ciclo 2** — ASM de portas (com autorização `scan_ativo`), DMARC estrito, conector M365, webhooks; pytest 161 ok. Falta ligar ao runner (precisa de telas)
 - [x] **Ciclo 3** — API do cofre, parser, matcher determinístico e telas; web 113 testes, lint, typecheck e build ok
-- [ ] **Ciclo 4** — portal do fornecedor `/fornecedor/[token]`, Score TPRM, reavaliação periódica
+- [x] **Ciclo 4** — portal do fornecedor, Score TPRM, reavaliação; worker 181 testes, web 119, build ok. Faltam telas da contratante e agendador
 - [ ] **Ciclo 5** — dossiê de ciberseguro (PDF + SHA-256), console MSP, validação final
 
 ## Definition of Done (rodar no fim)

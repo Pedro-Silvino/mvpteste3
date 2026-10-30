@@ -4,9 +4,11 @@ import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import SupabaseDb, load_env
 from app.ingest import router as ingest_router
+from app.tprm.api import router as tprm_router
 from app.monthly import run_scheduler
 from app.runner import run_forever
 
@@ -36,8 +38,20 @@ app = FastAPI(title="Sentinela Worker", lifespan=lifespan)
 
 
 app.include_router(ingest_router)
+app.include_router(tprm_router)
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# O navegador do fornecedor envia provas direto ao worker (evita o limite de corpo da Vercel): só a origem do portal.
+load_env()  # APP_ORIGIN pode vir do worker/.env, que o lifespan só leria depois
+if os.environ.get("APP_ORIGIN"):
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[os.environ["APP_ORIGIN"]],
+        allow_methods=["POST", "OPTIONS"],
+        allow_headers=["Content-Type", "X-File-Name"],
+    )

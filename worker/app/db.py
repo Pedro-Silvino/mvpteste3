@@ -335,3 +335,88 @@ class SupabaseDb:
         stale = {"status": "eq.rodando", "started_at": f"lt.{limit}"}
         self.client.patch("/jobs", params={**stale, "attempts": "gte.3"}, json={"status": "erro", "error": "worker_timeout"}).raise_for_status()
         self.client.patch("/jobs", params={**stale, "attempts": "lt.3"}, json={"status": "pendente"}).raise_for_status()
+
+    # ---- TPRM (fornecedores)
+    def find_vendor_assessment(self, token_hash: str) -> dict | None:
+        r = self.client.get(
+            "/vendor_assessments",
+            params={
+                "token_hash": f"eq.{token_hash}",
+                "select": "id,org_id:organization_id,vendor_id,status,token_expires_at,revoked_at",
+                "limit": 1,
+            },
+        )
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+
+    def count_vendor_evidence(self, assessment_id: str) -> int:
+        r = self.client.get("/vendor_evidence_links", params={"assessment_id": f"eq.{assessment_id}", "select": "id", "limit": 100})
+        r.raise_for_status()
+        return len(r.json())
+
+    def upload_vendor_evidence(self, path: str, data: bytes, content_type: str) -> None:
+        self.storage.post(
+            f"/object/evidence/{path}", content=data, headers={"Content-Type": content_type, "x-upsert": "false"}
+        ).raise_for_status()
+
+    def save_vendor_evidence_row(self, **kw) -> None:
+        self.client.post("/vendor_evidence_links", json=kw).raise_for_status()
+
+    def vendor_evidence_controls(self, assessment_id: str) -> set[str]:
+        r = self.client.get("/vendor_evidence_links", params={"assessment_id": f"eq.{assessment_id}", "select": "control_id"})
+        r.raise_for_status()
+        return {row["control_id"] for row in r.json()}
+
+    def pending_vendor_assessments(self, limit: int = 20) -> list[dict]:
+        r = self.client.get(
+            "/vendor_assessments",
+            params={
+                "status": "eq.enviada",
+                "tprm_score": "is.null",
+                "select": "id,org_id:organization_id,vendor_id,answers,vendor_organizations(name,domain)",
+                "order": "submitted_at",
+                "limit": limit,
+            },
+        )
+        r.raise_for_status()
+        return [
+            {**{k: row[k] for k in ("id", "org_id", "vendor_id", "answers")},
+             "domain": row["vendor_organizations"]["domain"], "vendor_name": row["vendor_organizations"]["name"]}
+            for row in r.json()
+        ]
+
+    def vendors_due(self, days: int) -> list[dict]:
+        limit_date = (datetime.now(UTC) - timedelta(days=days)).isoformat()
+        r = self.client.get(
+            "/vendor_organizations",
+            params={
+                "status": "eq.homologado",
+                "or": f"(last_assessed_at.is.null,last_assessed_at.lt.{limit_date})",
+                "select": "id,name,domain,status,organization_id",
+                "limit": 200,
+            },
+        )
+        r.raise_for_status()
+        due = []
+        for v in r.json():
+            a = self.client.get(
+                "/vendor_assessments",
+                params={"vendor_id": f"eq.{v['id']}", "status": "eq.enviada", "select": "id,answers", "order": "submitted_at.desc", "limit": 1},
+            )
+            a.raise_for_status()
+            if a.json():
+                due.append({"vendor_id": v["id"], "org_id": v["organization_id"], "domain": v["domain"], "status": v["status"],
+                            "vendor_name": v["name"], "assessment_id": a.json()[0]["id"], "answers": a.json()[0]["answers"]})
+        return due
+
+    def save_vendor_result(self, assessment_id: str, vendor_id: str, answers_score: int, external_score: int | None,
+                           tprm_score: int, status: str) -> None:
+        self.client.patch(
+            "/vendor_assessments", params={"id": f"eq.{assessment_id}"},
+            json={"answers_score": answers_score, "external_score": external_score, "tprm_score": tprm_score},
+        ).raise_for_status()
+        self.client.patch(
+            "/vendor_organizations", params={"id": f"eq.{vendor_id}"},
+            json={"tprm_score": tprm_score, "status": status, "last_assessed_at": datetime.now(UTC).isoformat()},
+        ).raise_for_status()
