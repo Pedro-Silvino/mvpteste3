@@ -16,6 +16,14 @@ Memória entre conversas. **Entrada nova sempre no topo.** Curto e objetivo.
 
 ---
 
+## 2026-10-30 — CAT-TPRM ciclo 3: API do cofre, leitor de questionários e respostas assistidas (branch `release/prova-cyber-v1`)
+- Feito: `POST/GET /api/vault` (o navegador envia o arquivo ao bucket privado e calcula o SHA-256; o servidor baixa, confere o tipo real e recalcula o hash, e recusa com 422 se não bater; só então chama `vault_register`); `POST /api/questionnaires/parse` (JSON ou CSV, com limites); `lib/questionnaire-matcher.ts` (regras fixas por palavra-chave, evidência mais nova da categoria, trilha com id e SHA-256, aviso de evidência com mais de 1 ano); telas `/painel/cofre` e `/painel/questionarios` (aprovar em 1 clique e baixar CSV das respostas aprovadas, com proteção contra fórmula de planilha).
+- Arquivos: `apps/web/lib/{vault,questionnaire-parser,questionnaire-matcher}.ts` (+ testes), `apps/web/app/api/{vault,questionnaires/parse}/route.ts`, `apps/web/app/painel/{cofre,questionarios}/*`, `sidebar-nav.tsx`.
+- Decisões: D36.
+- Testes: web Vitest 113/113 (27 novos), lint, typecheck e build ok. NÃO verificado: telas no navegador e fluxo contra o Supabase real (a migração do ciclo 1 não está aplicada; as rotas usam cliente sem tipos até rodar `supabase gen types`).
+- Próximo passo: ciclo 4 (portal do fornecedor e Score TPRM).
+- Bloqueios: ok do Pedro na migração do ciclo 1 para o cofre funcionar de verdade.
+
 ## 2026-10-30 — CAT-TPRM ciclo 2: ASM de portas, conector M365 sem agente e webhooks (branch `release/prova-cyber-v1`)
 - Feito: `scans/asm.py` (TCP connect em 3389/22/445, sem enviar dado, timeout 3 s, só IP público, exige `scan_ativo`); DMARC estrito (só `p=reject`/`p=quarantine`; `p=none` agora é falha; lê a tag inteira, então `sp=reject` não engana); `connectors/m365.py` (Graph: MFA de admins e licenças de segurança, só contagens, paginação presa ao host da Graph, token nunca em erro); `notifications/webhooks.py` (Slack, Teams e e-mail; destinos validados; não repete aviso de SPF/DMARC que já estava em falha).
 - Arquivos: `worker/app/{scans/asm.py,connectors/m365.py,notifications/webhooks.py}`, `worker/app/scans/external.py`, `worker/tests/{test_asm_ports,test_m365_connector,test_webhooks}.py`.

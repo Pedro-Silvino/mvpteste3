@@ -11,6 +11,8 @@ const ITEMS = [
   { href: "/painel/planos", label: "Planos", icon: "plans" },
   { href: "/painel/documentos", label: "Documentos", icon: "kits" },
   { href: "/painel/evidencias", label: "Evidências", icon: "evidence" },
+  { href: "/painel/cofre", label: "Cofre", icon: "evidence" },
+  { href: "/painel/questionarios", label: "Questionários", icon: "answers" },
   { href: "/painel/agente", label: "Coletor", icon: "agent" },
   { href: "/painel/respostas", label: "Respostas", icon: "answers" },
   { href: "/painel/empresa", label: "Empresa", icon: "building" },
